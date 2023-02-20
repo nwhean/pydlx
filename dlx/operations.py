@@ -20,7 +20,7 @@ def search(root: Column, O=[]) -> None:
         return
     
     c = choose(root)    # choose a column (deterministically)
-    cover(c)    # cover column c
+    c.cover()    # cover column c
     
     r = c.down
     while r != c:
@@ -28,7 +28,7 @@ def search(root: Column, O=[]) -> None:
         
         j = r.right
         while j != r:
-            cover(j)
+            j.cover()
             j = j.right
         
         search(root, O)   # repeat recursively on reduced matrix
@@ -37,12 +37,12 @@ def search(root: Column, O=[]) -> None:
         
         j = r.left
         while j != r:
-            uncover(j)
+            j.uncover()
             j = j.left
         
         r = r.down  # try another row
     
-    uncover(c)
+    c.uncover()
     return
 
 
@@ -70,43 +70,3 @@ def choose(root: Column) -> Column:
             s = j.size
         j = j.right
     return c
-
-
-def cover(c: Column) -> None:
-    """
-    Removes c from the header list and removes all rows in c's own list
-    from the other column lists they are in.
-    """
-    # remove c from the header list
-    c.right.left = c.left
-    c.left.right = c.right
-    
-    i = c.down  # i is link at the next row
-    while i != c:
-        # remove rows from c's own list
-        j = i.right     # j is the link at the next column from i
-        while j != i:
-            # remove j from other column list
-            j.down.up = j.up
-            j.up.down = j.down
-            j.column.size -= 1
-            j = j.right
-        i = i.down
-
-
-def uncover(c: Column) -> None:
-    """Uncover a previously covered column."""
-    i = c.up
-    while i != c:
-        j = i.left
-        while j != i:
-            # unremove j from other column list
-            j.column.size += 1
-            j.down.up = j
-            j.up.down = j
-            j = j.left
-        i = i.up
-    
-    # unremove c from the header list
-    c.right.left = c
-    c.left.right = c
