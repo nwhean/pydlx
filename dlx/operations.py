@@ -6,19 +6,33 @@ from link import Link, Column
 
 def create_network(matrix: List[Row]) -> Column:
     """Convert a matrix into a dancing link network and return the root.
-    
-    >>> root = create_network([[0, 1], [1, 1]])
+    >>> root = create_network([\
+    [0, 1],\
+    [1, 1]\
+    ])
     >>> root.size == 2
     True
-    >>> root.right != root
+    >>> header = [root.right, root.right.right]
+    >>> root.right == header[0]
     True
-    >>> root.right.right.right == root
+    >>> root.left == header[1]
     True
-    >>> right = root.right
-    >>> right.down.down == right
+    >>> header[0].left == root
     True
-    >>> right = right.right
-    >>> right.down.down.down == right
+    >>> header[0].right == header[1]
+    True
+    >>> header[1].left == header[0]
+    True
+    >>> header[1].right == root
+    True
+    >>> link01 = header[1].down
+    >>> link01.left == link01
+    True
+    >>> link01.right == link01
+    True
+    >>> link01.up == header[1]
+    True
+    >>> link01.down == header[1].up
     True
     """
     # create the root header
@@ -55,6 +69,19 @@ def search(root: Column, O=[]) -> None:
         for each j ← L[r], L[L[r]], ..., while j != r,
             uncover column j.
     Uncover column c and return.
+    
+    >>> root = create_network([\
+    [0, 0, 1, 0, 1, 1, 0], \
+    [1, 0, 0, 1, 0, 0, 1], \
+    [0, 1, 1, 0, 0, 1, 0], \
+    [1, 0, 0, 1, 0, 0, 0], \
+    [0, 1, 0, 0, 0, 0, 1], \
+    [0, 0, 0, 1, 1, 0, 1]\
+    ])
+    >>> search(root)
+    0 3 
+    6 1 
+    2 4 5 
     """
     if root.right == root:
         print_solution(O)
@@ -69,7 +96,7 @@ def search(root: Column, O=[]) -> None:
         
         j = r.right
         while j != r:
-            j.cover()
+            j.column.cover()
             j = j.right
         
         search(root, O)   # repeat recursively on reduced matrix
@@ -78,7 +105,7 @@ def search(root: Column, O=[]) -> None:
         
         j = r.left
         while j != r:
-            j.uncover()
+            j.column.uncover()
             j = j.left
         
         r = r.down  # try another row
@@ -93,11 +120,12 @@ def print_solution(O: list) -> None:
     N[C[O]], N[C[R[O]]], N[C[R[R[O]]]], etc.
     """
     for r in O:
-        print(r.column.name)
+        print(r.column.name, end=" ")
         j = r.right
         while (j != r):
-            print(j.column.name)
+            print(j.column.name, end=" ")
             j = j.right
+        print()
 
 def choose(root: Column) -> Column:
     """Choose a column such that the branching factor is minimised."""

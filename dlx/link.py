@@ -7,6 +7,7 @@ class Link:
         if left:
             self.left = left
             self.right = left.right
+            left.right.left = self
             left.right = self
         else:
             self.left = self
