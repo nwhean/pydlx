@@ -1,16 +1,32 @@
 class Link:
-    def __init__(self):
-        self.left = self
-        self.right = self
+    def __init__(self, left: "Link" = None):
+        self.column = None
         self.up = self
         self.down = self
-        self.column = self
+        
+        if left:
+            self.left = left
+            self.right = left.right
+            left.right = self
+        else:
+            self.left = self
+            self.right = self
+
 
 class Column(Link):
-    def __init__(self, name: str):
-        super().__init__()
+    def __init__(self, name: int, left: "Column" = None) -> None:
+        super().__init__(left=left)
         self.size = 0
         self.name = name
+        self.column = self
+    
+    def add_link(self, link: Link):
+        """Add a link to a column"""
+        link.up = self.up
+        link.down = self
+        link.column = self
+        self.up.down = link
+        self.up = link
     
     def cover(self) -> None:
         """
