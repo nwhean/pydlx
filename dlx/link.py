@@ -15,7 +15,7 @@ class Link:
 
 
 class Column(Link):
-    def __init__(self, name: int, left: "Column" = None) -> None:
+    def __init__(self, name: str, left: "Column" = None) -> None:
         super().__init__(left=left)
         self.size = 0
         self.name = name

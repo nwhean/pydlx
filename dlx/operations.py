@@ -36,13 +36,13 @@ def create_network(matrix: List[Row]) -> Column:
     True
     """
     # create the root header
-    root = Column(-1)
+    root = Column("-1")
     
     # create the column header
     header = []
     left = root
     for j, v in enumerate(matrix[0]):
-        left = Column(j, left)
+        left = Column(str(j), left)
         header.append(left)
         root.size += 1
     
@@ -87,9 +87,9 @@ def search(root: Column, O=[], solution=[]) -> List[Link]:
     ])
     >>> solution = search(root)
     >>> print_solution(solution)
-    0 3 
-    6 1 
-    2 4 5 
+    0 3
+    1 6
+    2 4 5
     """
     if root.right == root:
         solution.append(O)  # add the O as a solution set
@@ -130,12 +130,13 @@ def print_solution(O: List[Link]) -> None:
     N[C[O]], N[C[R[O]]], N[C[R[R[O]]]], etc.
     """
     for r in O:
-        print(r.column.name, end=" ")
+        output = []
+        output.append(r.column.name)
         j = r.right
         while (j != r):
-            print(j.column.name, end=" ")
+            output.append(j.column.name)
             j = j.right
-        print()
+        print(' '.join(sorted(output)))
 
 def choose(root: Column) -> Column:
     """Choose a column such that the branching factor is minimised."""
