@@ -55,7 +55,7 @@ def create_network(matrix: List[Row]) -> Column:
     
     return root
 
-def search(root: Column, O=[]) -> None:
+def search(root: Column, O=[], solution=[]) -> List[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -70,6 +70,13 @@ def search(root: Column, O=[]) -> None:
             uncover column j.
     Uncover column c and return.
     
+    Check solution is empty if there is none
+    >>> root = create_network([[0, 1], [0, 0]])
+    >>> solution = search(root)
+    >>> not solution
+    True
+    
+    Check that there is a valid solution
     >>> root = create_network([\
     [0, 0, 1, 0, 1, 1, 0], \
     [1, 0, 0, 1, 0, 0, 1], \
@@ -78,13 +85,14 @@ def search(root: Column, O=[]) -> None:
     [0, 1, 0, 0, 0, 0, 1], \
     [0, 0, 0, 1, 1, 0, 1]\
     ])
-    >>> search(root)
+    >>> solution = search(root)
+    >>> print_solution(solution)
     0 3 
     6 1 
     2 4 5 
     """
     if root.right == root:
-        print_solution(O)
+        solution.append(O)  # add the O as a solution set
         return
     
     c = choose(root)    # choose a column (deterministically)
@@ -99,7 +107,9 @@ def search(root: Column, O=[]) -> None:
             j.column.cover()
             j = j.right
         
-        search(root, O)   # repeat recursively on reduced matrix
+        search(root, O, solution)   # repeat recursively on reduced matrix
+        if solution:
+            return solution[0]  # return the first solution found
         r = O.pop()     # remove r from the partion solution
         c = r.column
         
@@ -113,7 +123,7 @@ def search(root: Column, O=[]) -> None:
     c.uncover()
     return
 
-def print_solution(O: list) -> None:
+def print_solution(O: List[Link]) -> None:
     """
     Successively print the rows containing O0, O1, ..., Ok-1
     where the row containing data object O is printed by printing
