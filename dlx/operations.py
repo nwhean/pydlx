@@ -4,7 +4,7 @@ Row = List[int]
 from link import Link, Column
 
 
-def create_network(matrix: List[Row]) -> Column:
+def create_network(matrix: List[Row], names=None) -> Column:
     """Convert a matrix into a dancing link network and return the root.
     >>> root = create_network([\
     [0, 1],\
@@ -36,13 +36,16 @@ def create_network(matrix: List[Row]) -> Column:
     True
     """
     # create the root header
-    root = Column("-1")
+    root = Column("")
     
     # create the column header
     header = []
     left = root
     for j, v in enumerate(matrix[0]):
-        left = Column(str(j), left)
+        if names:
+            left = Column(names[j] if j < len(names) else None, left)
+        else:
+            left = Column(str(j), left)
         header.append(left)
         root.size += 1
     
@@ -55,7 +58,7 @@ def create_network(matrix: List[Row]) -> Column:
     
     return root
 
-def search(root: Column, O=[], solution=[]) -> List[Link]:
+def search(root: Column, O=None, solution=None) -> List[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -90,7 +93,29 @@ def search(root: Column, O=[], solution=[]) -> List[Link]:
     0 3
     1 6
     2 4 5
+    
+    Check that names are used when given
+    >>> root = create_network([\
+    [0, 0, 1, 0, 1, 1, 0], \
+    [1, 0, 0, 1, 0, 0, 1], \
+    [0, 1, 1, 0, 0, 1, 0], \
+    [1, 0, 0, 1, 0, 0, 0], \
+    [0, 1, 0, 0, 0, 0, 1], \
+    [0, 0, 0, 1, 1, 0, 1] \
+    ], \
+    names=["A", "B", "C", "D", "E", "F", "G"] \
+    )
+    >>> solution = search(root)
+    >>> print_solution(solution)
+    A D
+    B G
+    C E F
     """
+    if O is None:
+        O = []
+    if solution is None:
+        solution = []
+    
     if root.right == root:
         solution.append(O)  # add the O as a solution set
         return
