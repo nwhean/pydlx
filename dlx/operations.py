@@ -1,7 +1,7 @@
 from typing import List
 Row = List[int]
 
-from link import Link, Column
+from .link import Link, Column
 
 
 def create_network(matrix: List[Row], names=None) -> Column:
