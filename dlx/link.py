@@ -12,6 +12,22 @@ class Link:
         else:
             self.left = self
             self.right = self
+    
+    def remove_row(self) -> None:
+        self.down.up = self.up
+        self.up.down = self.down
+    
+    def remove_column(self) -> None:
+        self.right.left = self.left
+        self.left.right = self.right
+    
+    def restore_row(self) -> None:
+        self.down.up = self
+        self.up.down = self
+        
+    def restore_column(self) -> None:
+        self.right.left = self
+        self.left.right = self
 
 
 class Column(Link):
@@ -35,8 +51,7 @@ class Column(Link):
         from the other column lists they are in.
         """
         # remove c from the header list
-        self.right.left = self.left
-        self.left.right = self.right
+        self.remove_column()
         
         i = self.down  # i is link at the next row
         while i != self:
@@ -44,8 +59,7 @@ class Column(Link):
             j = i.right     # j is the link at the next column from i
             while j != i:
                 # remove j from other column list
-                j.down.up = j.up
-                j.up.down = j.down
+                j.remove_row()
                 j.column.size -= 1
                 j = j.right
             i = i.down
@@ -58,11 +72,9 @@ class Column(Link):
             while j != i:
                 # unremove j from other column list
                 j.column.size += 1
-                j.down.up = j
-                j.up.down = j
+                j.restore_row()
                 j = j.left
             i = i.up
         
         # unremove c from the header list
-        self.right.left = self
-        self.left.right = self
+        self.restore_column()
