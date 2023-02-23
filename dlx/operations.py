@@ -58,7 +58,7 @@ def create_network(matrix: List[Row], names=None) -> Column:
     
     return root
 
-def search(root: Column, O=None, solution=None) -> List[Link]:
+def search(root: Column, O=None) -> List[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -113,12 +113,9 @@ def search(root: Column, O=None, solution=None) -> List[Link]:
     """
     if O is None:
         O = []
-    if solution is None:
-        solution = []
     
     if root.right == root:
-        solution.append(O)  # add the O as a solution set
-        return
+        return O
     
     c = choose(root)    # choose a column (deterministically)
     c.cover()    # cover column c
@@ -132,11 +129,10 @@ def search(root: Column, O=None, solution=None) -> List[Link]:
             j.column.cover()
             j = j.right
         
-        search(root, O, solution)   # repeat recursively on reduced matrix
-        if solution:
-            return solution[0]  # return the first solution found
-        r = O.pop()     # remove r from the partion solution
-        c = r.column
+        if search(root, O):   # repeat recursively on reduced matrix
+            return O
+        
+        O.pop()     # remove the last row selected
         
         j = r.left
         while j != r:
