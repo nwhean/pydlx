@@ -58,7 +58,7 @@ def create_network(matrix: List[Row], names=None) -> Column:
     
     return root
 
-def search(root: Column, O=None) -> List[Link]:
+def search(root: Column, O=None, k=0) -> List[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -73,11 +73,13 @@ def search(root: Column, O=None) -> List[Link]:
             uncover column j.
     Uncover column c and return.
     
-    Check solution is empty if there is none
+    Check that there is no solution
     >>> root = create_network([[0, 1], [0, 0]])
     >>> solution = search(root)
-    >>> not solution
-    True
+    >>> next(solution)
+    Traceback (most recent call last):
+    ...
+    StopIteration
     
     Check that there is a valid solution
     >>> root = create_network([\
@@ -89,7 +91,8 @@ def search(root: Column, O=None) -> List[Link]:
     [0, 0, 0, 1, 1, 0, 1]\
     ])
     >>> solution = search(root)
-    >>> print_solution(solution)
+    >>> for i in solution:\
+        print_solution(i)
     0 3
     1 6
     2 4 5
@@ -106,33 +109,55 @@ def search(root: Column, O=None) -> List[Link]:
     names=["A", "B", "C", "D", "E", "F", "G"] \
     )
     >>> solution = search(root)
-    >>> print_solution(solution)
+    >>> for i in solution:\
+        print_solution(i)
     A D
     B G
     C E F
+    
+    Check that multiple solutions are printed
+    >>> root = create_network([\
+    [1, 0, 1], \
+    [0, 1, 0], \
+    [1, 1, 1] \
+    ], \
+    names=["A", "B", "C"] \
+    )
+    >>> solution = search(root)
+    >>> for i in solution:\
+        print_solution(i)
+    A C
+    B
+    A B C
     """
     if O is None:
-        O = []
+        O = [0] * root.size
     
     if root.right == root:
-        return O
+        yield O
     
     c = choose(root)    # choose a column (deterministically)
     c.cover()    # cover column c
     
     r = c.down
     while r != c:
-        O.append(r)    # include r in the partial solution
+        O[k] = r    # include r in the partial solution
         
         j = r.right
         while j != r:
             j.column.cover()
             j = j.right
         
-        if search(root, O):   # repeat recursively on reduced matrix
-            return O
-        
-        O.pop()     # remove the last row selected
+        solution = search(root, O, k+1)   # repeat recursively on reduced matrix
+        try:
+            if next(solution):
+                yield [i for i in O if i]
+        except StopIteration:
+            pass
+        finally:
+            r = O[k]
+            O[k] = 0    # remove the last row selected
+            c = r.column
         
         j = r.left
         while j != r:
