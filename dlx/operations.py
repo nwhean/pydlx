@@ -1,7 +1,10 @@
+"""Contains the implementation of DLX algorithm."""
+
 from typing import List
-Row = List[int]
 
 from .link import Link, Column
+
+Row = List[int]
 
 
 def create_network(matrix: List[Row], names=None) -> Column:
@@ -37,28 +40,28 @@ def create_network(matrix: List[Row], names=None) -> Column:
     """
     # create the root header
     root = Column("")
-    
+
     # create the column header
     header = []
     left = root
-    for j, v in enumerate(matrix[0]):
+    for j, _ in enumerate(matrix[0]):
         if names:
             left = Column(names[j] if j < len(names) else None, left)
         else:
             left = Column(str(j), left)
         header.append(left)
         root.size += 1
-    
+
     for row in matrix:
         left = None
-        for v, col in zip(row, header):
-            if v:
+        for val, col in zip(row, header):
+            if val:
                 left = Link(left)
                 col.add_link(left)
-    
+
     return root
 
-def search(root: Column, O=None, k=0) -> List[Link]:
+def search(root: Column, solution=None, k=0) -> List[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -130,70 +133,70 @@ def search(root: Column, O=None, k=0) -> List[Link]:
     B
     A B C
     """
-    if O is None:
-        O = [0] * root.size
-    
+    if solution is None:
+        solution = [0] * root.size
+
     if root.right == root:
-        yield O
-    
-    c = choose(root)    # choose a column (deterministically)
-    c.cover()    # cover column c
-    
-    r = c.down
-    while r != c:
-        O[k] = r    # include r in the partial solution
-        
-        j = r.right
-        while j != r:
+        yield solution
+
+    col = choose(root)    # choose a column (deterministically)
+    col.cover()    # cover column c
+
+    row = col.down
+    while row != col:
+        solution[k] = row    # include r in the partial solution
+
+        j = row.right
+        while j != row:
             j.column.cover()
             j = j.right
-        
-        solution = search(root, O, k+1)   # repeat recursively on reduced matrix
+
+        solution = search(root, solution, k+1)   # recurse on reduced matrix
         try:
             if next(solution):
-                yield [i for i in O if i]
+                yield [i for i in solution if i]
         except StopIteration:
             pass
         finally:
-            r = O[k]
-            O[k] = 0    # remove the last row selected
-            c = r.column
-        
-        j = r.left
-        while j != r:
+            row = solution[k]
+            solution[k] = 0    # remove the last row selected
+            col = row.column
+
+        j = row.left
+        while j != row:
             j.column.uncover()
             j = j.left
-        
-        r = r.down  # try another row
-    
-    c.uncover()
+
+        row = row.down  # try another row
+
+    col.uncover()
     return
 
-def print_solution(O: List[Link]) -> None:
+def print_solution(solution: List[Link]) -> None:
     """
     Successively print the rows containing O0, O1, ..., Ok-1
     where the row containing data object O is printed by printing
     N[C[O]], N[C[R[O]]], N[C[R[R[O]]]], etc.
     """
-    for r in O:
+    for row in solution:
         output = []
-        output.append(r.column.name)
-        j = r.right
-        while (j != r):
+        output.append(row.column.name)
+        j = row.right
+        while j != row:
             output.append(j.column.name)
             j = j.right
         print(' '.join(sorted(output)))
 
 def choose(root: Column) -> Column:
     """Choose a column such that the branching factor is minimised."""
-    s = float("inf")
+    size = float("inf")
     j = root.right
     while j != root:
-        if j.size < s:
-            c = j
-            s = j.size
+        if j.size < size:
+            col = j
+            size = j.size
         j = j.right
-    return c
+    return col
 
 
 if __name__ == "__main__":
