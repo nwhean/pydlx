@@ -2,48 +2,213 @@
 
 class Link:
     """Data object as described in Dancing Link by Donald Knuth."""
-    def __init__(self, left: "Link" = None):
-        self.column = None
-        self.up = self  # pylint: disable=invalid-name
-        self.down = self    # pylint: enable=invalid-name
+    def __init__(self, column: "Column"):
+        """
+        >>> a = Link(None)
+        >>> a.up == a
+        True
+        >>> a.down == a
+        True
+        >>> a.left == a
+        True
+        >>> a.right == a
+        True
+        """
+        # pylint: disable=invalid-name
+        self.column = column    # pointer to the Column header
+        self.up = self          # pointer to the Link above
+        self.down = self        # pointer to the Link below
+        self.left = self        # pointer to the Link to the left
+        self.right = self       # pointer to the Link to the right
+        # pylint: enable=invalid-name
 
-        if left:
-            self.left = left
-            self.right = left.right
-            left.right.left = self
-            left.right = self
-        else:
-            self.left = self
-            self.right = self
+    def add_right(self, link: "Link") -> None:
+        """Add a link to the right.
+        >>> a = Link(None)
+        >>> b = Link(None)
+        >>> c = Link(None)
+
+        a -- b
+        >>> a.add_right(b)
+        >>> a.right == b
+        True
+        >>> a.left == b
+        True
+        >>> b.left == a
+        True
+        >>> b.right == a
+        True
+
+        a -- c -- b
+        >>> a.add_right(c)
+        >>> a.right == c
+        True
+        >>> a.left == b
+        True
+        >>> c.left == a
+        True
+        >>> c.right == b
+        True
+        >>> b.left == c
+        True
+        >>> b.right == a
+        True
+        """
+        link.left = self
+        link.right = self.right
+        self.right.left = link
+        self.right = link
+
+    def add_down(self, link: "Link") -> None:
+        """Add a link to the bottom.
+        >>> a = Link(None)
+        >>> b = Link(None)
+        >>> c = Link(None)
+
+        a
+        |
+        b
+        >>> a.add_down(b)
+        >>> a.down == b
+        True
+        >>> a.up == b
+        True
+        >>> b.up == a
+        True
+        >>> b.down == a
+        True
+
+        a
+        |
+        c
+        |
+        b
+        >>> a.add_down(c)
+        >>> a.down == c
+        True
+        >>> a.up == b
+        True
+        >>> c.up == a
+        True
+        >>> c.down == b
+        True
+        >>> b.up == c
+        True
+        >>> b.down == a
+        True
+        """
+        link.up = self
+        link.down = self.down
+        self.down.up = link
+        self.down = link
 
     def remove_row(self) -> None:
-        """Remove the row of which self is a member of from linked list."""
+        """Remove the row of which self is a member of from linked list.
+        >>> a = Link(None)
+        >>> b = Link(None)
+        >>> c = Link(None)
+        >>> a.add_down(b)
+        >>> b.add_down(c)
+
+        a
+        |
+        b
+        |
+        c
+
+        >>> a.remove_row()
+        >>> a.up == c
+        True
+        >>> a.down == b
+        True
+        >>> b.up == c
+        True
+        >>> b.down == c
+        True
+        >>> c.up == b
+        True
+        >>> c.down == b
+        True
+        """
         self.down.up = self.up
         self.up.down = self.down
 
     def remove_column(self) -> None:
-        """Remove the col of which self is a member of from linked list."""
+        """Remove the col of which self is a member of from linked list.
+        >>> a = Link(None)
+        >>> b = Link(None)
+        >>> c = Link(None)
+        >>> a.add_right(b)
+        >>> b.add_right(c)
+
+        a -- b -- c
+
+        >>> a.remove_column()
+        >>> a.left == c
+        True
+        >>> a.right == b
+        True
+        >>> b.left == c
+        True
+        >>> b.right == c
+        True
+        >>> c.left == b
+        True
+        >>> c.right == b
+        True
+        """
         self.right.left = self.left
         self.left.right = self.right
 
     def restore_row(self) -> None:
-        """Restore the row of which self is a member of into linked list."""
+        """Restore the row of which self is a member of into linked list.
+        >>> a = Link(None)
+        >>> b = Link(None)
+        >>> c = Link(None)
+        >>> a.add_down(b)
+        >>> b.add_down(c)
+        >>> a.remove_row()
+        >>> a.restore_row()
+        >>> b.up == a
+        True
+        >>> b.down == c
+        True
+        >>> c.up == b
+        True
+        >>> c.down == a
+        True
+        """
         self.down.up = self
         self.up.down = self
 
     def restore_column(self) -> None:
-        """Restore the col of which self is a member of into linked list."""
+        """Restore the col of which self is a member of into linked list.
+        >>> a = Link(None)
+        >>> b = Link(None)
+        >>> c = Link(None)
+        >>> a.add_right(b)
+        >>> b.add_right(c)
+        >>> a.remove_column()
+        >>> a.restore_column()
+        >>> b.left == a
+        True
+        >>> b.right == c
+        True
+        >>> c.left == b
+        True
+        >>> c.right == a
+        True
+        """
         self.right.left = self
         self.left.right = self
 
 
 class Column(Link):
     """Column object as described in Dancing Link by Donald Knuth."""
-    def __init__(self, name: str, left: "Column" = None) -> None:
-        super().__init__(left=left)
-        self.size = 0
-        self.name = name
-        self.column = self
+    def __init__(self, name: str = ""):
+        super().__init__(self)
+        self.name: str = name   # symbolic identifier for printing answers
+        self.size: int = 0      # number of 1s in the column
 
     def add_link(self, link: Link):
         """Add a link to a column"""
