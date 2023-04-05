@@ -15,11 +15,15 @@ class Link:
         True
         """
         # pylint: disable=invalid-name
-        self.column = column    # pointer to the Column header
         self.up = self          # pointer to the Link above
         self.down = self        # pointer to the Link below
         self.left = self        # pointer to the Link to the left
         self.right = self       # pointer to the Link to the right
+        self.column = column    # pointer to the Column header
+        # add to the bottom of the column
+        if column is not None:
+            column.up.add_down(self)
+            column.size += 1
         # pylint: enable=invalid-name
 
     def add_right(self, link: "Link") -> None:
@@ -206,29 +210,72 @@ class Link:
 class Column(Link):
     """Column object as described in Dancing Link by Donald Knuth."""
     def __init__(self, name: str = ""):
-        super().__init__(self)
+        super().__init__(None)
         self.name: str = name   # symbolic identifier for printing answers
         self.size: int = 0      # number of 1s in the column
 
-    def add_link(self, link: Link):
-        """Add a link to a column"""
-        link.up = self.up
-        link.down = self
-        link.column = self
-        self.up.down = link
-        self.up = link
-
     def cover(self) -> None:
         """
-        Removes c from the header list and removes all rows in c's own list
-        from the other column lists they are in.
+        Removes self from the header list and removes all rows in self's
+        own list from the other column lists they are in.
+
+        create the headers
+        >>> col_b = Column("B")
+        >>> col_c = Column("C")
+        >>> col_e = Column("E")
+        >>> col_f = Column("F")
+        >>> col_b.add_right(col_c)
+        >>> col_c.add_right(col_e)
+        >>> col_e.add_right(col_f)
+
+        create the links - first row
+        >>> link_01 = Link(col_c)
+        >>> link_02 = Link(col_e)
+        >>> link_03 = Link(col_f)
+        >>> link_01.add_right(link_02)
+        >>> link_02.add_right(link_03)
+
+        create the links - second row
+        >>> link_10 = Link(col_b)
+        >>> link_11 = Link(col_c)
+        >>> link_13 = Link(col_f)
+        >>> link_10.add_right(link_11)
+        >>> link_11.add_right(link_13)
+
+        check that initialisation is correct
+        >>> col_b.size == 1
+        True
+        >>> col_c.size == 2
+        True
+        >>> col_e.size == 1
+        True
+        >>> col_f.size == 2
+        True
+
+        cover and check
+        >>> col_b.cover()
+        >>> col_b.size == 1
+        True
+        >>> col_b.down == link_10
+        True
+        >>> col_c.size == 1
+        True
+        >>> col_c.down.down == col_c
+        True
+        >>> col_e.size == 1
+        True
+        >>> col_e.down.down == col_e
+        True
+        >>> col_f.size == 1
+        True
+        >>> col_f.down.down == col_f
+        True
         """
-        # remove c from the header list
+        # remove self from the header list
         self.remove_column()
 
         i = self.down  # i is link at the next row
         while i != self:
-            # remove rows from c's own list
             j = i.right     # j is the link at the next column from i
             while j != i:
                 # remove j from other column list
@@ -238,16 +285,55 @@ class Column(Link):
             i = i.down
 
     def uncover(self) -> None:
-        """Uncover a previously covered column."""
+        """Uncover a previously covered column.
+        create the headers
+        >>> col_b = Column("B")
+        >>> col_c = Column("C")
+        >>> col_e = Column("E")
+        >>> col_f = Column("F")
+        >>> col_b.add_right(col_c)
+        >>> col_c.add_right(col_e)
+        >>> col_e.add_right(col_f)
+
+        create the links - first row
+        >>> link_01 = Link(col_c)
+        >>> link_02 = Link(col_e)
+        >>> link_03 = Link(col_f)
+        >>> link_01.add_right(link_02)
+        >>> link_02.add_right(link_03)
+
+        create the links - second row
+        >>> link_10 = Link(col_b)
+        >>> link_11 = Link(col_c)
+        >>> link_13 = Link(col_f)
+        >>> link_10.add_right(link_11)
+        >>> link_11.add_right(link_13)
+
+        cover, uncover and check
+        >>> col_b.cover()
+        >>> col_b.uncover()
+        >>> col_b.size == 1
+        True
+        >>> col_c.size == 2
+        True
+        >>> col_c.down.down == link_11
+        True
+        >>> col_e.size == 1
+        True
+        >>> col_f.size == 2
+        True
+        >>> col_f.down.down == link_13
+        True
+        """
         i = self.up
         while i != self:
             j = i.left
             while j != i:
-                # unremove j from other column list
+                # restore j to other column list
                 j.column.size += 1
                 j.restore_row()
                 j = j.left
             i = i.up
 
-        # unremove c from the header list
+        # restore self to the header list
         self.restore_column()
