@@ -2,6 +2,10 @@
 from .link import Link, Column
 
 
+class SolutionNotFound(Exception):
+    """Raised when there is no solution to the problem."""
+
+
 def create_network(matrix: list[list[int]], names=None) -> Column:
     """Convert a matrix into a dancing link network and return the root.
     >>> root = create_network([
@@ -79,7 +83,8 @@ def create_network(matrix: list[list[int]], names=None) -> Column:
 
     return root
 
-def search(root: Column, solution=None, k=0) -> list[Link]:
+def search(root: Column, solution: list[Link] = None, k: int = 0
+           ) -> list[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -97,88 +102,61 @@ def search(root: Column, solution=None, k=0) -> list[Link]:
     Check that there is no solution
     >>> root = create_network([[0, 1], [0, 0]])
     >>> solution = search(root)
-    >>> next(solution)
-    Traceback (most recent call last):
-    ...
-    StopIteration
+    >>> not solution
+    True
 
     Check that there is a valid solution
-    >>> root = create_network([\
-    [0, 0, 1, 0, 1, 1, 0], \
-    [1, 0, 0, 1, 0, 0, 1], \
-    [0, 1, 1, 0, 0, 1, 0], \
-    [1, 0, 0, 1, 0, 0, 0], \
-    [0, 1, 0, 0, 0, 0, 1], \
-    [0, 0, 0, 1, 1, 0, 1]\
-    ])
+    >>> root = create_network([
+    ...         [0, 0, 1, 0, 1, 1, 0],
+    ...         [1, 0, 0, 1, 0, 0, 1],
+    ...         [0, 1, 1, 0, 0, 1, 0],
+    ...         [1, 0, 0, 1, 0, 0, 0],
+    ...         [0, 1, 0, 0, 0, 0, 1],
+    ...         [0, 0, 0, 1, 1, 0, 1]])
     >>> solution = search(root)
-    >>> for i in solution:\
-        print_solution(i)
+    >>> print_solution(solution)
     0 3
+    4 5 2
     1 6
-    2 4 5
 
     Check that names are used when given
-    >>> root = create_network([\
-    [0, 0, 1, 0, 1, 1, 0], \
-    [1, 0, 0, 1, 0, 0, 1], \
-    [0, 1, 1, 0, 0, 1, 0], \
-    [1, 0, 0, 1, 0, 0, 0], \
-    [0, 1, 0, 0, 0, 0, 1], \
-    [0, 0, 0, 1, 1, 0, 1] \
-    ], \
-    names=["A", "B", "C", "D", "E", "F", "G"] \
-    )
+    >>> root = create_network([
+    ...         [0, 0, 1, 0, 1, 1, 0],
+    ...         [1, 0, 0, 1, 0, 0, 1],
+    ...         [0, 1, 1, 0, 0, 1, 0],
+    ...         [1, 0, 0, 1, 0, 0, 0],
+    ...         [0, 1, 0, 0, 0, 0, 1],
+    ...         [0, 0, 0, 1, 1, 0, 1]],
+    ...         names=["A", "B", "C", "D", "E", "F", "G"])
     >>> solution = search(root)
-    >>> for i in solution:\
-        print_solution(i)
+    >>> print_solution(solution)
     A D
+    E F C
     B G
-    C E F
-
-    Check that multiple solutions are printed
-    >>> root = create_network([\
-    [1, 0, 1], \
-    [0, 1, 0], \
-    [1, 1, 1] \
-    ], \
-    names=["A", "B", "C"] \
-    )
-    >>> solution = search(root)
-    >>> for i in solution:\
-        print_solution(i)
-    A C
-    B
-    A B C
     """
     if solution is None:
-        solution = [0] * root.size
+        solution = []   # initialise an empty list
 
-    if root.right == root:
-        yield solution
+    if root.right == root:  # the "matrix" is empty
+        return solution
 
     col = choose(root)    # choose a column (deterministically)
-    col.cover()    # cover column c
+    col.cover()    # cover column col
 
     row = col.down
     while row != col:
-        solution[k] = row    # include r in the partial solution
+        solution.append(row)    # include r in the partial solution
 
         j = row.right
         while j != row:
             j.column.cover()
             j = j.right
 
-        solution = search(root, solution, k+1)   # recurse on reduced matrix
-        try:
-            if next(solution):
-                yield [i for i in solution if i]
-        except StopIteration:
-            pass
-        finally:
-            row = solution[k]
-            solution[k] = 0    # remove the last row selected
-            col = row.column
+        temp = search(root, solution, k+1)   # recurse on reduced matrix
+        if temp:
+            return solution     # return if a solution is found
+        row = solution.pop()
+        col = row.column
 
         j = row.left
         while j != row:
@@ -188,7 +166,7 @@ def search(root: Column, solution=None, k=0) -> list[Link]:
         row = row.down  # try another row
 
     col.uncover()
-    return
+    return None
 
 def print_solution(solution: list[Link]) -> None:
     """
@@ -209,6 +187,9 @@ def print_solution(solution: list[Link]) -> None:
     B G
     C E F
     """
+    if not solution:
+        raise SolutionNotFound
+
     for link in solution:
         root = link
         print(link.column.name, end="")
