@@ -1,4 +1,6 @@
 """Contains the implementation of DLX algorithm."""
+from typing import Generator
+
 from .link import Link, Column
 
 
@@ -84,7 +86,7 @@ def create_network(matrix: list[list[int]], names=None) -> Column:
     return root
 
 def search(root: Column, solution: list[Link] = None, k: int = 0
-           ) -> list[Link]:
+           ) -> Generator[list[Link], None, None]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -100,10 +102,10 @@ def search(root: Column, solution: list[Link] = None, k: int = 0
     Uncover column c and return.
 
     Check that there is no solution
-    >>> root = create_network([[0, 1], [0, 0]])
-    >>> solution = search(root)
-    >>> not solution
-    True
+    >>> root = create_network([[0, 1],
+    ...                        [0, 0]])
+    >>> for solution in search(root):
+    ...     print_solution(solution)
 
     Check that there is a valid solution
     >>> root = create_network([
@@ -113,11 +115,12 @@ def search(root: Column, solution: list[Link] = None, k: int = 0
     ...         [1, 0, 0, 1, 0, 0, 0],
     ...         [0, 1, 0, 0, 0, 0, 1],
     ...         [0, 0, 0, 1, 1, 0, 1]])
-    >>> solution = search(root)
-    >>> print_solution(solution)
+    >>> for solution in search(root):
+    ...     print_solution(solution)
     0 3
     4 5 2
     1 6
+    <BLANKLINE>
 
     Check that names are used when given
     >>> root = create_network([
@@ -128,17 +131,33 @@ def search(root: Column, solution: list[Link] = None, k: int = 0
     ...         [0, 1, 0, 0, 0, 0, 1],
     ...         [0, 0, 0, 1, 1, 0, 1]],
     ...         names=["A", "B", "C", "D", "E", "F", "G"])
-    >>> solution = search(root)
-    >>> print_solution(solution)
+    >>> for solution in search(root):
+    ...     print_solution(solution)
     A D
     E F C
     B G
+    <BLANKLINE>
+
+    Check that multiple solutions are printed
+    >>> root = create_network([
+    ...     [1, 0, 1],
+    ...     [0, 1, 0],
+    ...     [1, 1, 1]],
+    ...     names=["A", "B", "C"])
+    >>> for solution in search(root):
+    ...     print_solution(solution)
+    A C
+    B
+    <BLANKLINE>
+    A B C
+    <BLANKLINE>
     """
     if solution is None:
         solution = []   # initialise an empty list
 
     if root.right == root:  # the "matrix" is empty
-        return solution
+        yield solution
+        return
 
     col = choose(root)    # choose a column (deterministically)
     col.cover()    # cover column col
@@ -152,9 +171,7 @@ def search(root: Column, solution: list[Link] = None, k: int = 0
             j.column.cover()
             j = j.right
 
-        temp = search(root, solution, k+1)   # recurse on reduced matrix
-        if temp:
-            return solution     # return if a solution is found
+        yield from search(root, solution, k+1)   # recurse on reduced matrix
         row = solution.pop()
         col = row.column
 
@@ -166,7 +183,7 @@ def search(root: Column, solution: list[Link] = None, k: int = 0
         row = row.down  # try another row
 
     col.uncover()
-    return None
+    return
 
 def print_solution(solution: list[Link]) -> None:
     """
@@ -186,6 +203,7 @@ def print_solution(solution: list[Link]) -> None:
     A D
     B G
     C E F
+    <BLANKLINE>
     """
     if not solution:
         raise SolutionNotFound
@@ -198,6 +216,7 @@ def print_solution(solution: list[Link]) -> None:
             print("", link.column.name, end="")
             link = link.right
         print()
+    print()
 
 def choose(root: Column) -> Column:
     """Choose a column such that the branching factor is minimised.
