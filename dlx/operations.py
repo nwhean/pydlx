@@ -1,67 +1,85 @@
 """Contains the implementation of DLX algorithm."""
-
-from typing import List
-
 from .link import Link, Column
 
-Row = List[int]
 
-
-def create_network(matrix: List[Row], names=None) -> Column:
+def create_network(matrix: list[list[int]], names=None) -> Column:
     """Convert a matrix into a dancing link network and return the root.
-    >>> root = create_network([\
-    [0, 1],\
-    [1, 1]\
-    ])
+    >>> root = create_network([
+    ...         [0, 1],
+    ...         [1, 1]])
     >>> root.size == 2
     True
-    >>> header = [root.right, root.right.right]
-    >>> root.right == header[0]
+
+    # put all headers in a list
+    >>> header0 = root.right
+    >>> header1 = root.right.right
+    >>> header0.left == root
     True
-    >>> root.left == header[1]
+    >>> header0.right == header1
     True
-    >>> header[0].left == root
+    >>> header1.left == header0
     True
-    >>> header[0].right == header[1]
+    >>> header1.right == root
     True
-    >>> header[1].left == header[0]
-    True
-    >>> header[1].right == root
-    True
-    >>> link01 = header[1].down
+
+    # check that the links are correctly placed
+    >>> link01 = header1.down
+    >>> link10 = header0.down
+    >>> link11 = header1.down.down
     >>> link01.left == link01
     True
     >>> link01.right == link01
     True
-    >>> link01.up == header[1]
+    >>> link01.up == header1
     True
-    >>> link01.down == header[1].up
+    >>> link01.down == link11
+    True
+    >>> link10.left == link11
+    True
+    >>> link10.right == link11
+    True
+    >>> link10.up == header0
+    True
+    >>> link10.down == header0
+    True
+    >>> link11.left == link10
+    True
+    >>> link11.right == link10
+    True
+    >>> link11.up == link01
+    True
+    >>> link11.down == header1
     True
     """
+    # automatically generate names if not given
+    if names is None:
+        names = [str(i) for i in range(len(matrix[0]))]
+
     # create the root header
     root = Column("")
+    root.size = len(matrix[0])
 
-    # create the column header
-    header = []
+    # create the header list
     left = root
-    for j, _ in enumerate(matrix[0]):
-        if names:
-            left = Column(names[j] if j < len(names) else None, left)
-        else:
-            left = Column(str(j), left)
-        header.append(left)
-        root.size += 1
+    headers = []
+    for name in names:
+        header = Column(name)
+        left.add_right(header)
+        left = header
+        headers.append(header)
 
     for row in matrix:
         left = None
-        for val, col in zip(row, header):
+        for val, header in zip(row, headers):
             if val:
-                left = Link(left)
-                col.add_link(left)
+                link = Link(header)
+                if left is not None:
+                    left.add_right(link)
+                left = link
 
     return root
 
-def search(root: Column, solution=None, k=0) -> List[Link]:
+def search(root: Column, solution=None, k=0) -> list[Link]:
     """
     If R[h] = h, print the current solution and return.
     Otherwise choose a column object c.
@@ -75,7 +93,7 @@ def search(root: Column, solution=None, k=0) -> List[Link]:
         for each j ← L[r], L[L[r]], ..., while j != r,
             uncover column j.
     Uncover column c and return.
-    
+
     Check that there is no solution
     >>> root = create_network([[0, 1], [0, 0]])
     >>> solution = search(root)
@@ -83,7 +101,7 @@ def search(root: Column, solution=None, k=0) -> List[Link]:
     Traceback (most recent call last):
     ...
     StopIteration
-    
+
     Check that there is a valid solution
     >>> root = create_network([\
     [0, 0, 1, 0, 1, 1, 0], \
@@ -99,7 +117,7 @@ def search(root: Column, solution=None, k=0) -> List[Link]:
     0 3
     1 6
     2 4 5
-    
+
     Check that names are used when given
     >>> root = create_network([\
     [0, 0, 1, 0, 1, 1, 0], \
@@ -117,7 +135,7 @@ def search(root: Column, solution=None, k=0) -> List[Link]:
     A D
     B G
     C E F
-    
+
     Check that multiple solutions are printed
     >>> root = create_network([\
     [1, 0, 1], \
@@ -172,23 +190,43 @@ def search(root: Column, solution=None, k=0) -> List[Link]:
     col.uncover()
     return
 
-def print_solution(solution: List[Link]) -> None:
+def print_solution(solution: list[Link]) -> None:
     """
-    Successively print the rows containing O0, O1, ..., Ok-1
-    where the row containing data object O is printed by printing
-    N[C[O]], N[C[R[O]]], N[C[R[R[O]]]], etc.
+    Successively print the rows in 'solution'.
+    For each row, print N[C[O]], N[C[R[O]]], N[C[R[R[O]]]], etc.
+        where O is a link
+
+    >>> root = create_network(
+    ...         [[1, 0, 0, 1, 0, 0, 0],
+    ...          [0, 1, 0, 0, 0, 0, 1],
+    ...          [0, 0, 1, 0, 1, 1, 0]],
+    ...         ["A", "B", "C", "D", "E", "F", "G"])
+    >>> solution = [root.right.up,
+    ...             root.right.right.up,
+    ...             root.right.right.right.up]
+    >>> print_solution(solution)
+    A D
+    B G
+    C E F
     """
-    for row in solution:
-        output = []
-        output.append(row.column.name)
-        j = row.right
-        while j != row:
-            output.append(j.column.name)
-            j = j.right
-        print(' '.join(sorted(output)))
+    for link in solution:
+        root = link
+        print(link.column.name, end="")
+        link = link.right
+        while link != root:
+            print("", link.column.name, end="")
+            link = link.right
+        print()
 
 def choose(root: Column) -> Column:
-    """Choose a column such that the branching factor is minimised."""
+    """Choose a column such that the branching factor is minimised.
+    >>> root = create_network([
+    ...         [0, 1, 0],
+    ...         [1, 1, 0],
+    ...         [1, 0, 1]])
+    >>> choose(root).name == "2"
+    True
+    """
     size = float("inf")
     j = root.right
     while j != root:
@@ -197,8 +235,3 @@ def choose(root: Column) -> Column:
             size = j.size
         j = j.right
     return col
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
