@@ -12,7 +12,7 @@ A Python implementation of Donald Knuth's Dancing Link Algorithm.
 
 ### Installing
 
-* git clone https://github.com/nwhean/pydlx.git
+* pip install git+https://github.com/nwhean/pydlx.git
 
 ### Executing program
 
