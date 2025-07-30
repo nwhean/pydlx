@@ -1,5 +1,6 @@
 """Contains the implementation of DLX algorithm."""
 from typing import Generator
+from itertools import zip_longest
 
 from .link import Link, Column
 
@@ -8,80 +9,41 @@ class SolutionNotFound(Exception):
     """Raised when there is no solution to the problem."""
 
 
-def create_network(matrix: list[list[int]], names=None) -> Column:
-    """Convert a matrix into a dancing link network and return the root.
-    >>> root = create_network([
-    ...         [0, 1],
-    ...         [1, 1]])
-    >>> root.size == 2
-    True
-
-    # put all headers in a list
-    >>> header0 = root.right
-    >>> header1 = root.right.right
-    >>> header0.left == root
-    True
-    >>> header0.right == header1
-    True
-    >>> header1.left == header0
-    True
-    >>> header1.right == root
-    True
-
-    # check that the links are correctly placed
-    >>> link01 = header1.down
-    >>> link10 = header0.down
-    >>> link11 = header1.down.down
-    >>> link01.left == link01
-    True
-    >>> link01.right == link01
-    True
-    >>> link01.up == header1
-    True
-    >>> link01.down == link11
-    True
-    >>> link10.left == link11
-    True
-    >>> link10.right == link11
-    True
-    >>> link10.up == header0
-    True
-    >>> link10.down == header0
-    True
-    >>> link11.left == link10
-    True
-    >>> link11.right == link10
-    True
-    >>> link11.up == link01
-    True
-    >>> link11.down == header1
-    True
-    """
-    # automatically generate names if not given
-    if names is None:
-        names = [str(i) for i in range(len(matrix[0]))]
-
+Matrix = list[list[int]]
+def create_network(matrix: Matrix, names: list[str] | None = None) -> Column:
+    """Convert a matrix into a dancing link network and return the root."""
     # create the root header
-    root = Column("")
-    root.size = len(matrix[0])
+    root = Column()
 
     # create the header list
     left = root
-    headers = []
-    for name in names:
+    headers: list[Column] = []
+    for _, name in zip_longest(matrix[0], names, fillvalue=""):
         header = Column(name)
         left.add_right(header)
         left = header
         headers.append(header)
 
+    # create the nodes
+    first = None
     for row in matrix:
-        left = None
+        # create the spacer node
+        spacer = Link(None)     # spacer node doesn't belong to column
+        spacer.up = first
+
+        first = None
         for val, header in zip(row, headers):
             if val:
                 link = Link(header)
-                if left is not None:
-                    left.add_right(link)
-                left = link
+                if not first:
+                    first = link    # record first node in option before spacer
+
+        spacer.down = link          # record last node in option after spacer
+
+    # create the last spacer
+    spacer = Link(None)
+    spacer.up = first
+    spacer.down = None
 
     return root
 
