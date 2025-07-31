@@ -150,6 +150,9 @@ class TestColumn(unittest.TestCase):
 
 
 class TestBaseDLX(unittest.TestCase):
+    def tearDown(self):
+        BaseDLX.instances.clear()
+
     def test_add_down(self):
         a = Link()
         b = Link()
@@ -176,3 +179,90 @@ class TestBaseDLX(unittest.TestCase):
         self.assertEqual(c.down, b)
         self.assertEqual(b.up, c)
         self.assertEqual(b.down, a)
+
+    def test_hide(self):
+        #       B   C   E   F
+        #       0   1   1   1
+        #       1   1   0   1
+
+        # nodes
+        #   0   1   2   3   4
+        #   5       6   7   8
+        #   9   10  11      12
+        #   13
+
+        # create the headers
+        matrix = [[0, 1, 1, 1],
+                  [1, 1, 0, 1]]
+        names = ["B", "C", "E", "F"]
+        root = create_network(matrix, names)
+
+        b = root.right
+        c = b.right
+        e = c.right
+        f = e.right
+
+        node_11: Link = c.down.down
+        node_11.hide()
+
+        self.assertEqual(b.size, 0)
+
+        self.assertEqual(c.size, 2)
+        self.assertEqual(c.down.id, 6)
+        self.assertEqual(c.down.down.id, 11)
+        self.assertEqual(c.down.down.down, c)
+
+        self.assertEqual(e.size, 1)
+        self.assertEqual(e.down.id, 7)
+        self.assertEqual(e.down.down, e)
+
+        self.assertEqual(f.size, 1)
+        self.assertEqual(f.down.id, 8)
+        self.assertEqual(f.down.down, f)
+
+    def test_unhid(self):
+        #       B   C   E   F
+        #       0   1   1   1
+        #       1   1   0   1
+
+        # nodes
+        #   0   1   2   3   4
+        #   5       6   7   8
+        #   9   10  11      12
+        #   13
+
+        # create the headers
+        matrix = [[0, 1, 1, 1],
+                  [1, 1, 0, 1]]
+        names = ["B", "C", "E", "F"]
+        root = create_network(matrix, names)
+
+        b = root.right
+        c = b.right
+        e = c.right
+        f = e.right
+
+        # cover, uncover and check
+        node_11: Link = c.down.down
+        node_11.hide()
+        node_11.unhide()
+
+        # check header id
+        self.assertEqual(b.id, 1)
+        self.assertEqual(c.id, 2)
+        self.assertEqual(e.id, 3)
+        self.assertEqual(f.id, 4)
+
+        # check header sizes
+        self.assertEqual(b.size, 1)
+        self.assertEqual(c.size, 2)
+        self.assertEqual(e.size, 1)
+        self.assertEqual(f.size, 2)
+
+        # check column members
+        self.assertEqual(c.down.id, 6)
+        self.assertEqual(e.down.id, 7)
+        self.assertEqual(f.down.id, 8)
+        self.assertEqual(b.down.id, 10)
+        self.assertEqual(c.down.down.id, 11)
+        self.assertEqual(f.down.down.id, 12)
