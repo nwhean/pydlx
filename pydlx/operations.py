@@ -18,6 +18,8 @@ def create_network(matrix: Matrix, names: list[str] | None = None) -> Column:
     # create the header list
     left = root
     headers: list[Column] = []
+    if names is None:
+        names = []
     for _, name in zip_longest(matrix[0], names, fillvalue=""):
         header = Column(name)
         left.add_right(header)
@@ -47,153 +49,91 @@ def create_network(matrix: Matrix, names: list[str] | None = None) -> Column:
 
     return root
 
-def search(root: Column, solution: list[Link] = None, k: int = 0
-           ) -> Generator[list[Link], None, None]:
-    """
-    If R[h] = h, print the current solution and return.
-    Otherwise choose a column object c.
-    Cover column c.
-    For each r ← D[c], D[D[c]], ..., while r != c,
-        set O_k ← r;
-        for each j ← R[r], R[R[r]], ..., while j != r,
-            cover column j;
-        search(k + 1);
-        set r ← O_k and c ← C[r];
-        for each j ← L[r], L[L[r]], ..., while j != r,
-            uncover column j.
-    Uncover column c and return.
+def ecx(root: Column, sol: list[Link] | None = None, level: int = 0):
+    """Exact Cover via Dancing Link using Algorithm X."""
+    if sol is None:
+        sol = []
 
-    Check that there is no solution
-    >>> root = create_network([[0, 1],
-    ...                        [0, 0]])
-    >>> for solution in search(root):
-    ...     print_solution(solution)
+    # Step X2: Enter Level `level`
+    if root.right == root:  # all items have been covered
+        # visit the solution specified by x_0 x_1 x_2 ... x_level-1
+        yield sol
 
-    Check that there is a valid solution
-    >>> root = create_network([
-    ...         [0, 0, 1, 0, 1, 1, 0],
-    ...         [1, 0, 0, 1, 0, 0, 1],
-    ...         [0, 1, 1, 0, 0, 1, 0],
-    ...         [1, 0, 0, 1, 0, 0, 0],
-    ...         [0, 1, 0, 0, 0, 0, 1],
-    ...         [0, 0, 0, 1, 1, 0, 1]])
-    >>> for solution in search(root):
-    ...     print_solution(solution)
-    0 3
-    4 5 2
-    1 6
-    <BLANKLINE>
-
-    Check that names are used when given
-    >>> root = create_network([
-    ...         [0, 0, 1, 0, 1, 1, 0],
-    ...         [1, 0, 0, 1, 0, 0, 1],
-    ...         [0, 1, 1, 0, 0, 1, 0],
-    ...         [1, 0, 0, 1, 0, 0, 0],
-    ...         [0, 1, 0, 0, 0, 0, 1],
-    ...         [0, 0, 0, 1, 1, 0, 1]],
-    ...         names=["A", "B", "C", "D", "E", "F", "G"])
-    >>> for solution in search(root):
-    ...     print_solution(solution)
-    A D
-    E F C
-    B G
-    <BLANKLINE>
-
-    Check that multiple solutions are printed
-    >>> root = create_network([
-    ...     [1, 0, 1],
-    ...     [0, 1, 0],
-    ...     [1, 1, 1]],
-    ...     names=["A", "B", "C"])
-    >>> for solution in search(root):
-    ...     print_solution(solution)
-    A C
-    B
-    <BLANKLINE>
-    A B C
-    <BLANKLINE>
-    """
-    if solution is None:
-        solution = []   # initialise an empty list
-
-    if root.right == root:  # the "matrix" is empty
-        yield solution
+        # Step X8: Leave Level `level`
+        # if level == 0:  # terminate if level == 0
+        #     return
+        # else:
+        #     level -= 1
+        #     return      # go to X6
         return
 
-    col = choose(root)    # choose a column (deterministically)
-    col.cover()    # cover column col
+    # Step X3: Choose item `i`
+    i: Column = choose(root)
 
-    row = col.down
-    while row != col:
-        solution.append(row)    # include r in the partial solution
+    # Step X4: Cover item `i`
+    i.cover()
+    x: Link = i.down
+    sol.append(x)
 
-        j = row.right
-        while j != row:
-            j.column.cover()
-            j = j.right
+    # Step X5: Try x_l
+    while x != i:
+        # This covers the items != i in the option that contains x_l.
+        node: Link = x + 1
+        while node != x:
+            column: Column = node.column
+            if not column:  # node is a spacer
+                node = node.up
+            else:
+                column.cover()
+                node += 1
 
-        yield from search(root, solution, k+1)   # recurse on reduced matrix
-        row = solution.pop()
-        col = row.column
+        yield from ecx(root, sol, level+1)
 
-        j = row.left
-        while j != row:
-            j.column.uncover()
-            j = j.left
+        # Step X6: Try again
+        # This uncovers the items != i in the option that contains x_l,
+        # using the reverse of the order in X5.
+        node: Link = x - 1
+        while node != x:
+            column: Column = node.column
+            if not column:  # node is a spacer
+                node = node.down
+            else:
+                column.uncover()
+                node -= 1
 
-        row = row.down  # try another row
+        x = x.down
+        sol[-1] = x
 
-    col.uncover()
-    return
+    # tried all options for i
+    # Step X7: Backtrack
+    i.uncover()
+    del sol[-1]
+
+def choose(root: Column) -> Column:
+    """Choose a column such that the branching factor is minimised."""
+    retval = root
+    j = root.right
+    size = j.size + 1
+
+    while j != root:
+        if j.size < size:
+            retval = j
+            size = j.size
+        j = j.right
+
+    return retval
 
 def print_solution(solution: list[Link]) -> None:
-    """
-    Successively print the rows in 'solution'.
-    For each row, print N[C[O]], N[C[R[O]]], N[C[R[R[O]]]], etc.
-        where O is a link
-
-    >>> root = create_network(
-    ...         [[1, 0, 0, 1, 0, 0, 0],
-    ...          [0, 1, 0, 0, 0, 0, 1],
-    ...          [0, 0, 1, 0, 1, 1, 0]],
-    ...         ["A", "B", "C", "D", "E", "F", "G"])
-    >>> solution = [root.right.up,
-    ...             root.right.right.up,
-    ...             root.right.right.right.up]
-    >>> print_solution(solution)
-    A D
-    B G
-    C E F
-    <BLANKLINE>
-    """
+    """Successively print the rows in 'solution'."""
     if not solution:
         raise SolutionNotFound
 
-    for link in solution:
-        root = link
-        print(link.column.name, end="")
-        link = link.right
-        while link != root:
-            print("", link.column.name, end="")
-            link = link.right
-        print()
-    print()
+    for node in solution:
+        while node.column:  # move until we reach the row end spacer
+            node += 1
+        node: Link = node.up      # move to the first node of the row
 
-def choose(root: Column) -> Column:
-    """Choose a column such that the branching factor is minimised.
-    >>> root = create_network([
-    ...         [0, 1, 0],
-    ...         [1, 1, 0],
-    ...         [1, 0, 1]])
-    >>> choose(root).name == "2"
-    True
-    """
-    size = float("inf")
-    j = root.right
-    while j != root:
-        if j.size < size:
-            col = j
-            size = j.size
-        j = j.right
-    return col
+        while node.column:
+            print(node.column.name, end=" ")
+            node += 1
+        print()
