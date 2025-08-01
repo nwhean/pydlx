@@ -8,7 +8,7 @@ A Python implementation of Donald Knuth's Dancing Link Algorithm.
 
 ### Dependencies
 
-* Python 3.9 or above.
+* Python 3.11 or above.
 
 ### Installing
 
@@ -18,7 +18,7 @@ A Python implementation of Donald Knuth's Dancing Link Algorithm.
 
 * Import the required functions
 ```py
-from pydlx import create_matrix, search, print_solution
+from pydlx import create_matrix, ecx, print_solution
 ```
 
 * Create a dancing link network with exact cover matrix. `names` is optional, and if not given, defaults to integer index starting from 0.
@@ -33,16 +33,17 @@ root = create_network([
             names=["A", "B", "C", "D", "E", "F", "G"])
 ```
 
-* The `search` function returns a generator of solution set to the exact cover problem. It is possible to iterate through all the solutions as such:
+* The `ecx` function returns a generator of solution set to the exact cover problem. It is possible to iterate through all the solutions as such:
 ```py
-for solution in search(root):
+for solution in ecx(root):
     print_solution(solution)
+    print()
 ```
 
 * With the example exact cover matrix given, the following will be printed out. Note that the row sequence or the sequece within the row.
 ```
 A D
-E F C
+C E F
 B G
 
 ```
@@ -59,3 +60,4 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 References were made to the following materials
 * [Dancing Links](https://arxiv.org/abs/cs/0011047)
+* The Art of Computer Programming, Volume 4, Fascicle 5
