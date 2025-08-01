@@ -6,7 +6,7 @@ from pydlx.operations import create_network
 
 class TestColumn(unittest.TestCase):
     def tearDown(self):
-        BaseDLX.instances.clear()
+        BaseDLX._instances.clear()
 
     def test_add_bottom(self):
         a = Column()
@@ -151,7 +151,7 @@ class TestColumn(unittest.TestCase):
 
 class TestBaseDLX(unittest.TestCase):
     def tearDown(self):
-        BaseDLX.instances.clear()
+        BaseDLX._instances.clear()
 
     def test_add_down(self):
         a = Link()

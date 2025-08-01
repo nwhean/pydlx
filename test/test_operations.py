@@ -8,7 +8,7 @@ from pydlx.operations import create_network, ecx, mrv, print_solution
 
 class TestOperations(unittest.TestCase):
     def tearDown(self):
-        BaseDLX.instances.clear()
+        BaseDLX._instances.clear()
 
     def test_create_network(self):
         #       B   C   E   F
@@ -54,9 +54,9 @@ class TestOperations(unittest.TestCase):
         self.assertEqual(f.down.down.id, 12)
 
         # check spacers info
-        spacer_5 = root.instances[5]
-        spacer_9 = root.instances[9]
-        spacer_13 = root.instances[13]
+        spacer_5 = root._instances[5]
+        spacer_9 = root._instances[9]
+        spacer_13 = root._instances[13]
 
         self.assertEqual(spacer_5.id, 5)
         self.assertIsNone(spacer_5.up)

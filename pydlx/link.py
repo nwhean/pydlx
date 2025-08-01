@@ -4,24 +4,29 @@ from abc import ABC
 
 class BaseDLX(ABC):
     """Base class of Link and Column classes."""
-    instances = []
+    _instances = []
 
     def __init__(self):
-        self.id: int = len(BaseDLX.instances)   # auto record id
+        self.id: int = len(BaseDLX._instances)   # auto record id
         self.up: BaseDLX = self
         self.down: BaseDLX = self
-        BaseDLX.instances.append(self)          # record the instance
+        BaseDLX._instances.append(self)          # record the instance
 
-    def __del__(self):
-        """Remove instance from record."""
-        if self in BaseDLX.instances:
-            BaseDLX.instances.remove(self)
+    def delete(self):
+        """Remove instance from memory."""
+        if self.up == self.down == self:            # if root node
+            for node in BaseDLX._instances[1:]:
+                node.delete()                       # delete other nodes
+            BaseDLX._instances.clear()              # clear the instances list
+
+        self.up = None
+        self.down = None
 
     def __add__(self, other: int):
-        return BaseDLX.instances[self.id + other]
+        return BaseDLX._instances[self.id + other]
 
     def __sub__(self, other: int):
-        return BaseDLX.instances[self.id - other]
+        return BaseDLX._instances[self.id - other]
 
     def _add_down(self, node: "BaseDLX") -> None:
         """Add a node to the bottom."""
@@ -42,6 +47,12 @@ class Column(BaseDLX):
         self.size: int = 0      # number of 1s in the column
         self.left: Column = self
         self.right: Column = self
+
+    def delete(self):
+        """Delete the instance from memory."""
+        self.left = None
+        self.right = None
+        super().delete()
 
     def add_bottom(self, node: "Link") -> None:
         """Add a node to the bottom of the column."""
@@ -93,6 +104,11 @@ class Link(BaseDLX):
         self.column: Column = column    # pointer to the Column header
         if column:                      # spacer nodes  not in a column
             column.add_bottom(self)
+
+    def delete(self):
+        """Delete the instance from memory."""
+        self.column = None
+        super().delete()
 
     def hide(self):
         """Hide a row of solution."""
