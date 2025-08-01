@@ -3,9 +3,7 @@ import sys
 import unittest
 
 from pydlx.link import BaseDLX
-from pydlx.operations import \
-    SolutionNotFound, \
-    create_network, ecx, choose, print_solution
+from pydlx.operations import create_network, ecx, mrv, print_solution
 
 
 class TestOperations(unittest.TestCase):
@@ -149,11 +147,11 @@ class TestOperations(unittest.TestCase):
         solutions = [_ for _ in ecx(root)]
         self.assertEqual(len(solutions), 2)
 
-    def test_choose(self):
+    def test_mrv(self):
         root = create_network([[0, 1, 0],
                                [1, 1, 0],
                                [1, 0, 1]])
-        self.assertEqual(choose(root).id, 3)
+        self.assertEqual(mrv(root).id, 3)
 
     def test_print_solution(self):
         root = create_network([[1, 0, 0, 1, 0, 0, 0],

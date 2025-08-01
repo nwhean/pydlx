@@ -49,7 +49,22 @@ def create_network(matrix: Matrix, names: list[str] | None = None) -> Column:
 
     return root
 
-def ecx(root: Column, sol: list[Link] | None = None, level: int = 0):
+def mrv(root: Column) -> Column:
+    """Return the column with minimum remaining values."""
+    retval = root
+    j = root.right
+    size = j.size + 1
+
+    while j != root:
+        if j.size < size:
+            retval = j
+            size = j.size
+        j = j.right
+
+    return retval
+
+def ecx(root: Column, sol: list[Link] | None = None, level: int = 0,
+        choose=mrv) -> Generator[list[Link], None, None]:
     """Exact Cover via Dancing Link using Algorithm X."""
     if sol is None:
         sol = []
@@ -87,7 +102,7 @@ def ecx(root: Column, sol: list[Link] | None = None, level: int = 0):
                 column.cover()
                 node += 1
 
-        yield from ecx(root, sol, level+1)
+        yield from ecx(root, sol, level+1, choose=choose)
 
         # Step X6: Try again
         # This uncovers the items != i in the option that contains x_l,
@@ -108,20 +123,6 @@ def ecx(root: Column, sol: list[Link] | None = None, level: int = 0):
     # Step X7: Backtrack
     i.uncover()
     del sol[-1]
-
-def choose(root: Column) -> Column:
-    """Choose a column such that the branching factor is minimised."""
-    retval = root
-    j = root.right
-    size = j.size + 1
-
-    while j != root:
-        if j.size < size:
-            retval = j
-            size = j.size
-        j = j.right
-
-    return retval
 
 def print_solution(solution: list[Link]) -> None:
     """Successively print the rows in 'solution'."""
