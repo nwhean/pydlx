@@ -23,12 +23,19 @@ def queens_matrix(n: int, cand: list[tuple[int]]) -> Matrix:
     """Return the exact cover matrix for size 'n' n-queens problem."""
     width = 2 * n + 2 * (2*n - 1)
     retval = []
+    # example of n = 8
+    # instead of R0 R1 . . . R7 F0 F1 . . . F7
+    # we order by R4 F4 R3 F3 R5 F5 R2 F2 R6 F6 R1 F1 R7 F7 R0 F0
+    # to make the column that is most constraining chosen
+    order = organ_pipe_ordering(n)
     for (r, c, u, d) in cand:
         row: list[int] = [0] * width
-        row[r] = 1              # row
-        row[n + c] = 1          # column
-        row[2*n + u] = 1        # up-diagonal
-        row[4*n - 1 + d] = 1    # down-diagonal
+        r_index = order.index(r)
+        c_index = order.index(c)
+        row[r_index * 2] = 1        # row
+        row[c_index * 2 + 1] = 1    # column
+        row[2*n + u] = 1            # up-diagonal
+        row[4*n - 1 + d] = 1        # down-diagonal
         retval.append(row)
     return retval
 
@@ -52,6 +59,20 @@ def queens_solution(sol: list[Link]) -> Matrix:
         retval[r][c] = 1
 
     return retval
+
+def organ_pipe_ordering(n: int) -> list[int]:
+    """Return the organ pipe ordering of a list of number from 0 to n - 1."""
+    mid = n//2
+    retval = [mid]
+    for i in range(1, mid + 1):
+        val = mid - i
+        if val >= 0:
+            retval.append(val)
+        val = mid + i
+        if val < n:
+            retval.append(val)
+    return retval
+
 
 def main():
     """Calculate the number of solutions to n-Queens Problem."""
