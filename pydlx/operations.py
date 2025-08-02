@@ -10,8 +10,41 @@ class SolutionNotFound(Exception):
 
 
 Matrix = list[list[int]]
-def create_network(matrix: Matrix, names: list[str] | None = None) -> Column:
-    """Convert a matrix into a dancing link network and return the root."""
+def create_network(matrix: Matrix,
+                   names: list[str] | None = None,
+                   primary: int | None = None,
+                   secondary: int | None = None) -> Column:
+    """Convert a matrix into a dancing link network and return the root.
+
+    Parameters
+    ----------
+    matrix : list[list[int]]
+             exact cover matrix
+    names : lst[str], default = None
+            names for the headers
+    primary : int, default = None
+              number of primary columns
+    secondary : int, default = None
+                number of secondary columns
+    """
+    width = len(matrix[0])
+
+    if primary is None and secondary is None:
+        primary = width
+        secondary = 0
+    elif primary is None:       # secondary is given
+        if secondary < 0:
+            raise ValueError("'secondary' must be non-negative.")
+        primary = width - secondary     # calculate primary automatically
+    elif secondary is None:     # primary is given
+        if primary < 0:
+            raise ValueError("'primary' must be non-negative.")
+        secondary = width - primary     # calculate secondary automatically
+    else:
+        if primary != width - secondary:
+            raise ValueError(
+                "'primary' and 'secondary' must sum to matrix width.")
+
     # create the root header
     root = Column()
 
@@ -20,9 +53,11 @@ def create_network(matrix: Matrix, names: list[str] | None = None) -> Column:
     headers: list[Column] = []
     if names is None:
         names = []
-    for _, name in zip_longest(matrix[0], names, fillvalue=""):
+    for index, (_, name) in enumerate(zip_longest(matrix[0], names,
+                                                  fillvalue="")):
         header = Column(name)
-        left.add_right(header)
+        if index < primary:     # secondary items are not pointed to by primary
+            left.add_right(header)
         left = header
         headers.append(header)
 
