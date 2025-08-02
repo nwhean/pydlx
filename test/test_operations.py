@@ -3,7 +3,7 @@ import sys
 import unittest
 
 from pydlx.link import BaseDLX
-from pydlx.operations import create_network, ecx, mrv, print_solution
+from pydlx.operations import create_network, ecx, mrv, print_solution, progress
 
 
 class TestOperations(unittest.TestCase):
@@ -177,3 +177,6 @@ class TestOperations(unittest.TestCase):
                         "B G \n"
                         "C E F \n")
         sys.stdout = sys.__stdout__                  # Reset redirect.
+
+    def test_progress(self):
+        self.assertAlmostEqual(0.3125, progress([1,3], [2,4]))
