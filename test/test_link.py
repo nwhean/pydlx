@@ -1,12 +1,12 @@
 import unittest
 
-from pydlx.link import BaseDLX, Column, Link
-from pydlx.operations import create_network
+from dancing_link.link import DancingLink, Column, Link
+from dancing_link.operations import create_network
 
 
 class TestColumn(unittest.TestCase):
     def tearDown(self):
-        BaseDLX._instances.clear()
+        DancingLink._instances.clear()
 
     def test_add_bottom(self):
         a = Column()
@@ -149,9 +149,9 @@ class TestColumn(unittest.TestCase):
         self.assertEqual(f.down.down.id, 12)
 
 
-class TestBaseDLX(unittest.TestCase):
+class TestDancingLink(unittest.TestCase):
     def tearDown(self):
-        BaseDLX._instances.clear()
+        DancingLink._instances.clear()
 
     def test_add_down(self):
         a = Link()

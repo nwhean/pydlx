@@ -2,13 +2,13 @@ from io import StringIO
 import sys
 import unittest
 
-from pydlx.link import BaseDLX
-from pydlx.operations import create_network, ecx, mrv, print_solution, progress
+from dancing_link.link import DancingLink
+from dancing_link.operations import create_network, ecx, mrv, print_solution, progress
 
 
 class TestOperations(unittest.TestCase):
     def tearDown(self):
-        BaseDLX._instances.clear()
+        DancingLink._instances.clear()
 
     def test_create_network(self):
         #       B   C   E   F

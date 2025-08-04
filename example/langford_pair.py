@@ -4,7 +4,7 @@ Langford sequence, is a permutation of the sequence of 2n numbers
 are two units apart, and more generally the two copies of each number k
 are k units apart.
 """
-from pydlx import Link, create_network, ecx
+from dancing_link import Link, create_network, ecx
 
 
 Matrix = list[list[int]]

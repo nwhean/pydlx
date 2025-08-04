@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pydlx"
-version = "0.0.1"
+name = "dancing_link"
+version = "1.0.0"
 authors = [
   { name="Wee Hean Ng"},
 ]
 description = "A Python implementation of Donald Knuth's Dancing Link Algorithm."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -18,5 +18,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/nwhean/pydlx"
-"Bug Tracker" = "https://github.com/nwhean/pydlx/issues"
+"Homepage" = "https://github.com/nwhean/dancing_link"
+"Bug Tracker" = "https://github.com/nwhean/dancing_link/issues"

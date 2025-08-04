@@ -1,5 +1,5 @@
 """n queens problem: placing n non-attacking queens on an n×n chessboard."""
-from pydlx import Link, create_network, ecx
+from dancing_link import Link, create_network, ecx
 
 
 Matrix = list[list[int]]

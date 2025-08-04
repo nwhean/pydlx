@@ -1,4 +1,4 @@
-# PyDLX
+# dancing_link
 
 ## Description
 
@@ -12,13 +12,13 @@ A Python implementation of Donald Knuth's Dancing Link Algorithm.
 
 ### Installing
 
-* pip install git+https://github.com/nwhean/pydlx.git
+* pip install git+https://github.com/nwhean/dancing_link.git
 
 ### Executing program
 
 * Import the required functions
 ```py
-from pydlx import create_matrix, ecx, print_solution
+from dancing_link import create_matrix, ecx, print_solution
 ```
 
 * Create a dancing link network with exact cover matrix. `names` is optional, and if not given, defaults to integer index starting from 0.

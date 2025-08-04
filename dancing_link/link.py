@@ -2,33 +2,33 @@
 from abc import ABC
 
 
-class BaseDLX(ABC):
+class DancingLink(ABC):
     """Base class of Link and Column classes."""
     _instances = []
 
     def __init__(self):
-        self.id: int = len(BaseDLX._instances)   # auto record id
-        self.up: BaseDLX = self
-        self.down: BaseDLX = self
-        BaseDLX._instances.append(self)          # record the instance
+        self.id: int = len(DancingLink._instances)   # auto record id
+        self.up: DancingLink = self
+        self.down: DancingLink = self
+        DancingLink._instances.append(self)          # record the instance
 
     def delete(self):
         """Remove instance from memory."""
         if self.up == self.down == self:            # if root node
-            for node in BaseDLX._instances[1:]:
+            for node in DancingLink._instances[1:]:
                 node.delete()                       # delete other nodes
-            BaseDLX._instances.clear()              # clear the instances list
+            DancingLink._instances.clear()          # clear the instances list
 
         self.up = None
         self.down = None
 
     def __add__(self, other: int):
-        return BaseDLX._instances[self.id + other]
+        return DancingLink._instances[self.id + other]
 
     def __sub__(self, other: int):
-        return BaseDLX._instances[self.id - other]
+        return DancingLink._instances[self.id - other]
 
-    def _add_down(self, node: "BaseDLX") -> None:
+    def _add_down(self, node: "DancingLink") -> None:
         """Add a node to the bottom."""
         node.up = self
         node.down = self.down
@@ -36,7 +36,7 @@ class BaseDLX(ABC):
         self.down = node
 
 
-class Column(BaseDLX):
+class Column(DancingLink):
     """Represents a header in a DLX Algorithm."""
     def __init__(self, name: str | None = None):
         super().__init__()
@@ -97,7 +97,7 @@ class Column(BaseDLX):
             node = node.up
 
 
-class Link(BaseDLX):
+class Link(DancingLink):
     """Represents a Node in a DLX Algorithm."""
     def __init__(self, column: Column | None = None):
         super().__init__()
