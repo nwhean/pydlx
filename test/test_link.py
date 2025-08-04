@@ -1,7 +1,7 @@
 import unittest
 
 from dancing_link.link import DancingLink, Column, Link
-from dancing_link.operations import create_network
+from dancing_link.utility import create_network
 
 
 class TestColumn(unittest.TestCase):
