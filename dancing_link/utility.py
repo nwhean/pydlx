@@ -1,7 +1,7 @@
 """Contains the implementation of DLX algorithm."""
 from itertools import zip_longest
 
-from .link import Link, Column
+from .link import Column, ColumnColour, Link, LinkColour
 
 
 class SolutionNotFound(Exception):
@@ -9,6 +9,7 @@ class SolutionNotFound(Exception):
 
 
 Matrix = list[list[int]]
+
 def create_network(matrix: Matrix,
                    names: list[str] | None = None,
                    primary: int | None = None,
@@ -26,6 +27,15 @@ def create_network(matrix: Matrix,
     secondary : int, default = None
                 number of secondary columns
     """
+    # test whether colour is required
+    maxval = max(max(_) for _ in matrix)
+    if maxval == 1:
+        ColumnCls = Column
+        LinkCls = Link
+    else:
+        ColumnCls = ColumnColour
+        LinkCls = LinkColour
+
     width = len(matrix[0])
 
     if primary is None and secondary is None:
@@ -45,16 +55,16 @@ def create_network(matrix: Matrix,
                 "'primary' and 'secondary' must sum to matrix width.")
 
     # create the root header
-    root = Column()
+    root = ColumnCls()
 
     # create the header list
     left = root
-    headers: list[Column] = []
+    headers: list[Column | ColumnColour] = []
     if names is None:
         names = []
     for index, (_, name) in enumerate(zip_longest(matrix[0], names,
                                                   fillvalue="")):
-        header = Column(name)
+        header = ColumnCls(name)
         if index < primary:     # secondary items are not pointed to by primary
             left.add_right(header)
         left = header
@@ -62,22 +72,26 @@ def create_network(matrix: Matrix,
 
     # create the nodes
     first = None
+    link = None
     for row in matrix:
         # create the spacer node
-        spacer = Link(None)     # spacer node doesn't belong to column
+        spacer = LinkCls(None)     # spacer node doesn't belong to column
         spacer.up = first
 
         first = None
-        for val, header in zip(row, headers):
+        for index, (val, header) in enumerate(zip(row, headers)):
             if val:
-                link = Link(header)
+                kwargs = {'column': header}
+                if maxval != 1 and index >= primary:     # colour is required
+                    kwargs['colour'] = val - 1      # no colour = 0
+                link = LinkCls(**kwargs)
                 if not first:
                     first = link    # record first node in option before spacer
 
         spacer.down = link          # record last node in option after spacer
 
     # create the last spacer
-    spacer = Link(None)
+    spacer = LinkCls(None)
     spacer.up = first
     spacer.down = None
 

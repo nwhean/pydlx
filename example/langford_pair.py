@@ -4,7 +4,7 @@ Langford sequence, is a permutation of the sequence of 2n numbers
 are two units apart, and more generally the two copies of each number k
 are k units apart.
 """
-from dancing_link import Link, create_network, ecx
+from dancing_link import Link, create_network, xc
 
 
 Matrix = list[list[int]]
@@ -66,7 +66,7 @@ def main():
         matrix = langford_matrix(n, candidates)
         names = langford_names(n)
         network = create_network(matrix, names)
-        solutions = [_ for _ in ecx(network)]
+        solutions = [_ for _ in xc(network)]
 
         print(f"n = {n:,}, solutions = {len(solutions) // 2:,}")
         network.delete()

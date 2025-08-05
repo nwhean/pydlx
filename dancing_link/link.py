@@ -4,7 +4,7 @@ from abc import ABC
 
 class DancingLink(ABC):
     """Base class of Link and Column classes."""
-    _instances = []
+    _instances: list["DancingLink"] = []
 
     def __init__(self):
         self.id: int = len(DancingLink._instances)   # auto record id
@@ -97,6 +97,13 @@ class Column(DancingLink):
             node = node.up
 
 
+class ColumnColour(Column):
+    """Represents a header in a XCC Algorithm."""
+    def __init__(self, name: str | None = None):
+        super().__init__(name)
+        self.colour: int | None = None      # header colour defaults to None
+
+
 class Link(DancingLink):
     """Represents a Node in a DLX Algorithm."""
     def __init__(self, column: Column | None = None):
@@ -139,3 +146,83 @@ class Link(DancingLink):
                 down.up = node
                 column.size += 1
                 node -= 1
+
+
+class LinkColour(Link):
+    """Represents a Node in a XCC Algorithm."""
+    def __init__(self, column: ColumnColour | None = None, colour: int = 0):
+        super().__init__(column)
+        self.colour = colour
+
+    def hide(self):
+        """Hide a row of solution."""
+        node: LinkColour = self + 1
+        while node != self:
+            column = node.column
+            up = node.up
+            down = node.down
+            if not column:      # node is spacer
+                node = up       # loop back to the left most node
+            else:
+                if node.colour >= 0:    # ignore when colour < 0
+                    up.down = down      # remove from column
+                    down.up = up
+                    column.size -= 1
+                node += 1
+
+    def unhide(self):
+        """Unhide a row of solution."""
+        node: LinkColour = self - 1
+        while node != self:
+            column = node.column
+            up = node.up
+            down = node.down
+            if not column:      # node is spacer
+                node = down     # loop back to the right most node
+            else:
+                if node.colour >= 0:    # ignore when colour < 0
+                    up.down = node      # restore to column
+                    down.up = node
+                    column.size += 1
+                node -= 1
+
+    def commit(self):
+        """Either cover a column, or purify the node."""
+        if self.colour == 0:
+            self.column.cover()
+        elif self.colour > 0:
+            self.purify()
+
+    def uncommit(self):
+        """Reverse the commit function."""
+        if self.colour == 0:
+            self.column.uncover()
+        elif self.colour > 0:
+            self.unpurify()
+
+    def purify(self):
+        """Either erase the colour, or hide the node."""
+        colour = self.colour
+        column: ColumnColour = self.column
+        column.colour = colour
+
+        node: LinkColour = column.down
+        while node != column:
+            if node.colour == colour:
+                node.colour = -1
+            else:
+                node.hide()
+            node = node.down
+
+    def unpurify(self):
+        """Reverse the purify function."""
+        colour = self.colour
+        column: ColumnColour = self.column
+
+        node: LinkColour = column.up
+        while node != column:
+            if node.colour < 0:
+                node.colour = colour
+            else:
+                node.unhide()
+            node = node.up

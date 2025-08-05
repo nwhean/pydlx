@@ -18,7 +18,7 @@ A Python implementation of Donald Knuth's Dancing Link Algorithm.
 
 * Import the required functions
 ```py
-from dancing_link import create_matrix, ecx, print_solution
+from dancing_link import create_matrix, xc, print_solution
 ```
 
 * Create a dancing link network with exact cover matrix. `names` is optional, and if not given, defaults to integer index starting from 0.
@@ -33,9 +33,9 @@ root = create_network([
             names=["A", "B", "C", "D", "E", "F", "G"])
 ```
 
-* The `ecx` function returns a generator of solution set to the exact cover problem. It is possible to iterate through all the solutions as such:
+* The `xc` function returns a generator of solution set to the exact cover problem. It is possible to iterate through all the solutions as such:
 ```py
-for solution in ecx(root):
+for solution in xc(root):
     print_solution(solution)
     print()
 ```

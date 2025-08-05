@@ -1,5 +1,5 @@
 """n queens problem: placing n non-attacking queens on an n×n chessboard."""
-from dancing_link import Link, create_network, ecx
+from dancing_link import Link, create_network, xc
 
 
 Matrix = list[list[int]]
@@ -93,7 +93,7 @@ def main():
         matrix = queens_matrix(n, candidates)
         names = queens_names(n)
         network = create_network(matrix, names, primary=2*n)
-        solutions = [_ for _ in ecx(network)]
+        solutions = [_ for _ in xc(network)]
 
         print(f"n = {n:,}, solutions = {len(solutions):,}")
         network.delete()
