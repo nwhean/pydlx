@@ -1,7 +1,7 @@
 """Solve Sudoku Puzzle using DLX."""
 import string
 
-from dancing_link import Link, create_network, xc
+from dancing_link import Network
 
 
 class SolutionNotFound(Exception):
@@ -47,26 +47,26 @@ def sudoku_matrix(n: int, strs: list[str]) -> Matrix:
                 retval.append(new_row)
     return retval
 
-def sudoku_solution(n:int, solution: list[Link]) -> Matrix:
+def sudoku_solution(network: Network, n:int, solution: list[int]) -> Matrix:
     """Convert a dlx solution into Sudoku solution."""
     # initialise a n x n matrix
     mat = [[-1] * n for _ in range(n)]
     n2 = n**2
 
     for node in solution:
-        while node.column:  # move until we reach the row end spacer
+        while network.top[node] > 0:    # move until we reach the row end spacer
             node += 1
-        node: Link = node.up      # move to the first node of the row
+        node = network.up[node]         # move to the first node of the row
 
         # get puzzle index
         node += 1
-        column = node.column
-        index = int(column.id) - n2 - 1
+        column = network.top[node]
+        index = int(network.name[column]) - n2 - 1
         i, k = divmod(index, n)
 
         node = node + 1
-        column = node.column
-        index = int(column.id) - n2*2 - 1
+        column = network.top[node]
+        index = int(network.name[column]) - n2*2 - 1
         j = index // n
 
         mat[i][j] = INT2CHAR[k + 1]
@@ -106,11 +106,11 @@ def main(filename: str):
     puzzle = read_puzzle(filename)
     n = len(puzzle)
     matrix = sudoku_matrix(n, puzzle)
-    network = create_network(matrix)
+    network = Network(matrix)
 
     sol_mat = None
-    for sol in xc(network):
-        sol_mat = sudoku_solution(n, sol)
+    for sol in network.search():
+        sol_mat = sudoku_solution(network, n, sol)
         verify(n, sol_mat)
         for row in sol_mat:
             print(", ".join(c for c in row))
