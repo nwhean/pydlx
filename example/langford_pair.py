@@ -4,7 +4,8 @@ Langford sequence, is a permutation of the sequence of 2n numbers
 are two units apart, and more generally the two copies of each number k
 are k units apart.
 """
-from dancing_link import Link, create_network, xc
+# from dancing_link import Link, create_network, xc
+from dancing_link.network import Network
 
 
 Matrix = list[list[int]]
@@ -36,19 +37,27 @@ def langford_names(n: int) -> list[str]:
     """Return the names for the exact cover matrix columns."""
     return [str(i) for i in range(1, n+1)] + [str(i) for i in range(0, 2*n)]
 
-def langford_solution(sol: list[Link]) -> str:
+def langford_solution(network: Network, sol: list[int]) -> str:
     """Convert exact cover solution to Langford pair string."""
     retval = [0] * len(sol) * 2
     for node in sol:
-        while node.column:  # move until we reach the row end spacer
+        while network.top[node] > 0:    # move until we reach the row end spacer
             node += 1
-        node: Link = node.up      # move to the first node of the row
+        node = network.up[node]         # move to the first node of the row
 
-        i = node.column.name
+        col = network.top[node]
+        name = network.name[col]
+        i = name
+
         node += 1
-        j = int(node.column.name)
+        col = network.top[node]
+        name = network.name[col]
+        j = int(name)
+
         node += 1
-        k = int(node.column.name)
+        col = network.top[node]
+        name = network.name[col]
+        k = int(name)
 
         retval[j] = i
         retval[k] = i
@@ -65,11 +74,10 @@ def main():
 
         matrix = langford_matrix(n, candidates)
         names = langford_names(n)
-        network = create_network(matrix, names)
-        solutions = [_ for _ in xc(network)]
+        network = Network(matrix, names)
+        solutions = [_ for _ in network.search()]
 
         print(f"n = {n:,}, solutions = {len(solutions) // 2:,}")
-        network.delete()
 
 
 if __name__ == '__main__':
