@@ -1,9 +1,8 @@
 """n queens problem: placing n non-attacking queens on an n×n chessboard."""
-from dancing_link import Link, create_network, xc
+from dancing_link import Network
 
 
 Matrix = list[list[int]]
-
 
 def queens_candidates(n: int) -> list[tuple[int]]:
     """Return a list containing the position a candidate and its location:
@@ -48,21 +47,26 @@ def queens_names(n):
         retval.append(f"C{i}")
     return retval
 
-def queens_solution(sol: list[Link]) -> Matrix:
+def queens_solution(network: Network, sol: list[int]) -> Matrix:
     """Convert exact cover solution to n-queens problem solution."""
     n: int = len(sol)
     matrix = [[0] * n for _ in range(n)]
+
+    r = None
+    c = None
     for node in sol:
-        while node.column:  # move until we reach the row end spacer
+        while network.top[node] > 0:    # move until we reach the row end spacer
             node += 1
-        node: Link = node.up      # move to the first node of the row
+        node = network.up[node]         # move to the first node of the row
 
         count = 0
         while count < 2:
-            if node.column.name[0] == "R":
-                r = int(node.column.name[1:])
+            column = network.top[node]
+            name = network.name[column]
+            if name[0] == "R":
+                r = int(name[1:])
             else:
-                c = int(node.column.name[1:])
+                c = int(name[1:])
             node += 1
             count += 1
 
@@ -92,11 +96,10 @@ def main():
         candidates = queens_candidates(n)
         matrix = queens_matrix(n, candidates)
         names = queens_names(n)
-        network = create_network(matrix, names, primary=2*n)
-        solutions = [_ for _ in xc(network)]
+        network = Network(matrix, names, primary=2*n)
+        solutions = [_ for _ in network.search()]
 
         print(f"n = {n:,}, solutions = {len(solutions):,}")
-        network.delete()
 
 
 if __name__ ==  "__main__":
