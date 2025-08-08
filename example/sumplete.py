@@ -1,5 +1,5 @@
 """Solve Sumplete Puzzle using DLX."""
-from dancing_link import ColumnColour, LinkColour, create_network, xcc
+from dancing_link import NetworkColour
 
 
 class SolutionNotFound(Exception):
@@ -30,35 +30,33 @@ def read_puzzle(filename: str) -> tuple[Matrix, Constraint, Constraint]:
 def sumplete_matrix(
         puzzle: Matrix, const_row: Constraint, const_col: Constraint) -> Matrix:
     """Convert puzzle into an exact cover matrix."""
-    size = len(puzzle[0])
-    combo = 2**size
+    n = len(puzzle[0])
+    combo = 2**n
     retval = []
 
     # handle each row
     for i, row in enumerate(puzzle):
-        template = [0] * size * (2 + size)
+        template = [0] * n * (2 + n)
         template[i] = 1     # primary column for rows
         for k in range(combo):
-            condition = format(k, f'0{size}b')      # convert 'k' to bin string
+            condition = format(k, f'0{n}b')      # convert 'k' to bin string
             if sumproduct_equal(row, condition, const_row[i]):
                 temp = template.copy()
                 for j, c in enumerate(condition):
-                    temp[(2 + i)*size + j] = int(c) + 2
-                    # matrix representation: 2 = off, 3 = on
-                    # dancing link representation: 1 = off, 2 = on
+                    temp[(2 + i)*n + j] = str(c)
                 retval.append(temp)
 
     # handle each column
-    for j in range(size):
+    for j in range(n):
         col = [sub[j] for sub in puzzle]
-        template = [0] * size * (2 + size)
-        template[size + j] = 1  # primary column for columns
+        template = [0] * n * (2 + n)
+        template[n + j] = 1  # primary column for columns
         for k in range(combo):
-            condition = format(k, f'0{size}b')
+            condition = format(k, f'0{n}b')
             if sumproduct_equal(col, condition, const_col[j]):
                 temp = template.copy()
                 for i, c in enumerate(condition):
-                    temp[(2 + i)*size + j] = int(c) + 2
+                    temp[(2 + i)*n + j] = str(c)
                 retval.append(temp)
 
     return retval
@@ -67,22 +65,25 @@ def sumproduct_equal(nums: list[int], condition: str, val: int):
     """Return True if subset of `nums` given the `condition` sums to `val`."""
     return sum(i for i, j in zip(nums, condition) if j == '1') == val
 
-def sumplete_solution(solution: list[LinkColour]) -> Matrix:
+def sumplete_solution(network: NetworkColour, solution: list[int]) -> Matrix:
     """Convert a dlx solution into Sumplete solution."""
-    size = len(solution) // 2
-    retval = [([0] * size) for _ in range(size)]
+    n = len(solution) // 2
+    retval = [([0] * n) for _ in range(n)]
 
-    for sol in solution:
-        if int(sol.column.id) > size:   # only consider row solutions
+    for node in solution:
+        column = network.top[node]
+        if int(column) > n:   # only consider row solutions
             continue
-        node: LinkColour = sol + 1
-        column: ColumnColour= node.column
-        while column:
-            k = int(column.id) - 2*size - 1
-            i, j = divmod(k, size)
-            retval[i][j] = int(column.colour - 1)
+
+        node = node + 1
+        column = network.top[node]
+        while column > 0:
+            k = int(network.name[column]) - 2*n - 1
+            i, j = divmod(k, n)
+            c = network.colour[column]
+            retval[i][j] = int(network.colour_map_inv[c])
             node += 1
-            column = node.column
+            column = network.top[node]
 
     return retval
 
@@ -106,10 +107,10 @@ def main(filepath: str):
     """Calculate the solution to Sumplete puzzle."""
     puzzle, const_row, const_col = read_puzzle(filepath)
     matrix = sumplete_matrix(puzzle, const_row, const_col)
-    network = create_network(matrix, primary=len(const_row)*2)
+    network = NetworkColour(matrix, primary=len(const_row)*2)
 
-    for sol in xcc(network):
-        sol_matrix = sumplete_solution(sol)
+    for sol in network.search():
+        sol_matrix = sumplete_solution(network, sol)
         for i in sol_matrix:
             print(i)
         break   # only consider the first valid solution
