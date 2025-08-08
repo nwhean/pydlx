@@ -2,7 +2,7 @@
 from collections import defaultdict
 from itertools import accumulate, pairwise, permutations
 
-from dancing_link import ColumnColour, LinkColour, create_network, xcc
+from dancing_link import NetworkColour
 
 
 class SolutionNotFound(Exception):
@@ -57,7 +57,7 @@ def skyscraper_matrix(candidates: dict[tuple, tuple],
         for candidate in candidates[const]:
             temp = template.copy()
             for j, k in enumerate(candidate):
-                temp[(2 + i)*n + j] = k + 1     # colours start from 2
+                temp[(2 + i)*n + j] = str(k)
             retval.append(temp)
 
     # handle the columns
@@ -67,27 +67,29 @@ def skyscraper_matrix(candidates: dict[tuple, tuple],
         for candidate in candidates[const]:
             temp = template.copy()
             for i, k in enumerate(candidate):
-                temp[(2 + i)*n + j] = k + 1     # colours start from 2
+                temp[(2 + i)*n + j] = str(k)
             retval.append(temp)
 
     return retval
 
-def skyscraper_solution(solution: list[LinkColour]) -> Matrix:
+def skyscraper_solution(network: NetworkColour, solution: list[int]) -> Matrix:
     """Convert a dlx solution into Skyscraper solution."""
     n = len(solution) // 2
     retval = [([0] * n) for _ in range(n)]
 
-    for sol in solution:
-        if int(sol.column.id) < n:
+    for node in solution:
+        if int(network.top[node]) > n:  # only consider row solutions
             continue
-        node: LinkColour = sol + 1
-        column: ColumnColour= node.column
-        while column:
-            k = int(column.id) - 2*n - 1
+
+        node += 1
+        column = network.top[node]
+        while column > 0:
+            k = int(column) - 2*n - 1
             i, j = divmod(k, n)
-            retval[i][j] = int(column.colour)
+            c = network.colour[column]
+            retval[i][j] = int(network.colour_map_inv[c])
             node += 1
-            column = node.column
+            column = network.top[node]
 
     for i, row in enumerate(retval):
         for j, val in enumerate(row):
@@ -118,9 +120,9 @@ def main(filename: str):
     matrix = skyscraper_matrix(candidates, const_row, const_col)
     print(f"Exact cover matrix size: {len(matrix)}, {len(matrix[0])}")
 
-    network = create_network(matrix, primary=len(const_row)*2)
-    for sol in xcc(network):
-        sol_matrix = skyscraper_solution(sol)
+    network = NetworkColour(matrix, primary=len(const_row)*2)
+    for sol in network.search():
+        sol_matrix = skyscraper_solution(network, sol)
         for i in sol_matrix:
             print(i)
         break
