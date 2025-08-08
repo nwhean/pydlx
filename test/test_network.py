@@ -1,6 +1,6 @@
 import unittest
 
-from dancing_link.network import Network
+from dancing_link.network import Network, NetworkColour
 
 
 class TestNetwork(unittest.TestCase):
@@ -193,3 +193,55 @@ class TestNetwork(unittest.TestCase):
                                             8, 11, 3, 12,
                                             12, 1, 2, 4,
                                             None])
+
+
+class TestNetworkColour(unittest.TestCase):
+    def test_init(self):
+        # matrix:
+        #       p   q   r   x   y
+        #       1   1       1   2
+        #       1       1   2   1
+        #       1           3
+        #           1       2
+        #               1       3
+
+        # nodes:
+        #   0   1   2   3   4   5
+        #   6   7   8       9   10
+        #   11  12      13  14  15
+        #   16  17          18
+        #   19      20      21
+        #   22          23      24
+        #   25
+
+        matrix = [[1, 1, 0, 1, 2],
+                  [1, 0, 1, 2, 1],
+                  [1, 0, 0, 3, 0],
+                  [0, 1, 0, 2, 0],
+                  [0, 0, 1, 0, 3]]
+
+        network = NetworkColour(matrix,
+                                names=["p", "q", "r", "x", "y"],
+                                primary=3)
+
+        self.assertListEqual(network.name,
+                             ["0", "p", "q", "r", "x", "y"])
+        self.assertListEqual(network.left,
+                             [3, 0, 1, 2, 6, 4, 5])
+        self.assertListEqual(network.right,
+                             [1, 2, 3, 0, 5, 6, 4])
+        self.assertListEqual(network.len,
+                             [0, 3, 2, 2, 4, 3, 0,
+                              1, 2, 4, 5, -1, 1, 3,
+                              4, 5, -2, 1, 4, -3, 2,
+                              4, -4, 3, 5, -5])
+        self.assertListEqual(network.up,
+                             [0, 17, 20, 23, 21, 24, None,
+                              1, 2, 4, 5, 7, 7, 3,
+                              9, 10, 12, 12, 14, 17, 8,
+                              18, 20, 13, 15, 23])
+        self.assertListEqual(network.down,
+                             [0, 7, 8, 13, 9, 10, 10,
+                              12, 20, 14, 15, 15, 17, 23,
+                              18, 24, 18, 1, 21, 21, 2,
+                              4, 24, 3, 5, None])

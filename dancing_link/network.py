@@ -281,7 +281,7 @@ class Network:
                 if j <= 0:              # node is a spacer
                     p = self.up[p]
                 else:
-                    self.cover(j)
+                    self.commit(p, j)
                     p += 1
 
             yield from self.search(sol, level+1, choose=choose,
@@ -296,7 +296,7 @@ class Network:
                 if j <= 0:              # node is a spacer
                     p = self.down[p]
                 else:
-                    self.uncover(j)
+                    self.uncommit(p, j)
                     p -= 1
 
             x = self.down[x]
@@ -311,3 +311,129 @@ class Network:
         del sol[-1]
         del choices[-1]
         del branches[-1]
+
+    def commit(self, p: int, j: int):
+        """Alias for cover item 'j'."""
+        self.cover(j)
+
+    def uncommit(self, p: int, j: int):
+        """Alias for uncover item 'j'."""
+        self.uncover(j)
+
+
+class NetworkColour(Network):
+    """Represent a whole Dancing Link network, with colour."""
+    def __init__(self,
+                 matrix: Matrix,
+                 names: list[str] | None = None,
+                 primary: int | None = None):
+        super().__init__(matrix, names, primary)
+
+        # update left
+        spacer = len(matrix[0]) + 1
+        self.left.insert(primary + 1, spacer)
+
+        # update right
+        for index in range(primary + 1, spacer):
+            self.right[index] += 1
+        self.right.append(primary + 1)
+
+        # create colour map
+        colours = {val for row in matrix for val in row[primary:]}
+        colours.discard(0)
+        colours.discard(1)
+        self.colour_map = {}
+        for index, colour in enumerate(colours, 1):
+            self.colour_map[colour] = index
+        self.colour_map_inv = {value: key
+                               for key, value in self.colour_map.items()}
+
+        self.colour: list[int | None] = [None] * len(self.name) # headers
+        self.colour.append(0)   # for spacer
+        for row in matrix:
+            for index, val in enumerate(row, 0):
+                if not val:
+                    continue
+
+                if index < primary:
+                    self.colour.append(0)
+                else:
+                    self.colour.append(self.colour_map.get(val, 0))
+
+            self.colour.append(0)   # for spacer
+
+    def hide(self, p: int):
+        """Hide other nodes from the option that contains node `p`."""
+        q = p + 1
+        while q != p:
+            x = self.top[q]
+            u = self.up[q]
+            d = self.down[q]
+
+            if x <= 0:  # q was a spacer
+                q = u
+            else:
+                if self.colour[q] >= 0: # ignores node q when colour < 0
+                    self.down[u]= d
+                    self.up[d] = u
+                    self.len[x] -= 1
+                q += 1
+
+    def unhide(self, p: int):
+        """Unhide other nodes from the option that contains node `p`."""
+        q = p - 1
+        while q != p:
+            x = self.top[q]
+            u = self.up[q]
+            d = self.down[q]
+            if x <= 0:  # q was a spacer
+                q = d
+            else:
+                if self.colour[q] >= 0: # ignores node q when colour < 0
+                    self.down[u] = q
+                    self.up[d] = q
+                    self.len[x] += 1
+                q -= 1
+
+    def commit(self, p: int, j: int):
+        """Either cover or purify a column."""
+        c = self.colour[p]
+        if c == 0:
+            self.cover(j)
+        elif c > 0:
+            self.purify(p)
+
+    def uncommit(self, p: int, j: int):
+        """Either uncover or unpurify a column."""
+        c = self.colour[p]
+        if c == 0:
+            self.uncover(j)
+        elif c > 0:
+            self.unpurify(p)
+
+    def purify(self, p: int):
+        """Hide node of different colour, or set same colour to -1."""
+        c = self.colour[p]
+        i = self.top[p]
+        self.colour[i] = c
+        q = self.down[i]
+
+        while q != i:
+            if self.colour[q] == c:
+                self.colour[q] = -1
+            else:
+                self.hide(q)
+            q = self.down[q]
+
+    def unpurify(self, p: int):
+        """Unhide node of different colour, or restore colour from -1."""
+        c = self.colour[p]
+        i = self.top[p]
+        q = self.up[i]
+
+        while q != i:
+            if self.colour[q] < 0:
+                self.colour[q] = c
+            else:
+                self.unhide(q)
+            q = self.up[q]
