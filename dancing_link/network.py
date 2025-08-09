@@ -36,10 +36,6 @@ class Network:
             raise ValueError(f"Require 0 < primary < {width}.")
         self.primary = primary
 
-        # test whether colour is required
-        values = {k for i in matrix for k in i}
-        self.has_colour = values != {0, 1}
-
         # initialise empty lists
         self.name: list[str] = []
         self.left: list[int | None] = []
@@ -47,7 +43,6 @@ class Network:
         self.top: list[int]  = []
         self.up: list[int | None]  = []
         self.down: list[int | None]  = []
-        self.colour: list[int | None] = []
 
         # create the root header
         root = self.add_column(None)
