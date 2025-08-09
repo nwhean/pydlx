@@ -54,19 +54,25 @@ class Network:
         for index, (_, name) in enumerate(zip_longest(matrix[0], names,
                                                       fillvalue="")):
             header = self.add_column(name)
-            if index < primary: # secondary items are not pointed to by primary
+            if index != primary: # secondary items are not pointed to by primary
                 self._add_right(left, header)
 
             left = header
 
+        # create the spacer node
+        spacer = self.add_spacer()
+        self.up[spacer] = None
+
+        # if there are secondary items, first spacer contains left and right
+        if primary != width:
+            self.name.append(str(spacer))
+            self.left.append(id)
+            self.right.append(id)
+            self._add_right(left, spacer)
+
         # create the nodes
-        first = None
         link = None
         for row in matrix:
-            # create the spacer node
-            spacer = self.add_link(None)    # spacer doesn't belong to column
-            self.up[spacer] = first
-
             first = None
             for index, val in enumerate(row, 1):
                 if val:
@@ -76,10 +82,11 @@ class Network:
 
             self.down[spacer] = link    # record last node in option after spacer
 
-        # create the last spacer
-        spacer = self.add_link(None)
+            # create the spacer node
+            spacer = self.add_spacer()
+            self.up[spacer] = first
 
-        self.up[spacer] = first
+        # update the last spacer
         self.down[spacer] = None
 
     @property
@@ -87,33 +94,35 @@ class Network:
         """Return the number of links under a column."""
         return self.top
 
+    def _add_node(self) -> int:
+        """Add a node."""
+        idx: int = len(self.up)
+        self.up.append(idx)
+        self.down.append(idx)
+        return idx
+
     def add_column(self, name: str | None) -> int:
         """Add a column / item."""
-        id: int = len(self.up)
-        self.up.append(id)
-        self.down.append(id)
-
-        self.name.append(name if name else str(id))
+        idx: int = self._add_node()
+        self.name.append(name if name else str(idx))
         self.len.append(0)
-        self.left.append(id)
-        self.right.append(id)
+        self.left.append(idx)
+        self.right.append(idx)
+        return idx
 
-        return id
-
-    def add_link(self, top: int | None = None) -> int:
+    def add_link(self, top: int) -> int:
         """Add a link, under column `top`."""
-        id: int = len(self.up)
-        self.up.append(id)
-        self.down.append(id)
+        idx: int = self._add_node()
+        self.top.append(top)
+        self._add_bottom(top, idx)
+        return idx
 
-        if top:
-            self.top.append(top)
-            self._add_bottom(top, id)
-        else:
-            self.top.append(self._spacer)
-            self._spacer -= 1
-
-        return id
+    def add_spacer(self) -> int:
+        """Add a spacer node."""
+        idx: int = self._add_node()
+        self.top.append(self._spacer)
+        self._spacer -= 1
+        return idx
 
     def _add_down(self, i: int, j: int) -> None:
         """Add node 'j' directly below node 'i'."""
@@ -324,15 +333,6 @@ class NetworkColour(Network):
                  primary: int | None = None):
         super().__init__(matrix, names, primary)
 
-        # update left
-        spacer = len(matrix[0]) + 1
-        self.left.insert(primary + 1, spacer)
-
-        # update right
-        for index in range(primary + 1, spacer):
-            self.right[index] += 1
-        self.right.append(primary + 1)
-
         # create colour map
         colours = {val for row in matrix for val in row[primary:]}
         colours.discard(0)
@@ -343,7 +343,7 @@ class NetworkColour(Network):
         self.colour_map_inv = {value: key
                                for key, value in self.colour_map.items()}
 
-        self.colour: list[int | None] = [None] * len(self.name) # headers
+        self.colour: list[int | None] = [None] * (len(self.name) - 1) # headers
         self.colour.append(0)   # for spacer
         for row in matrix:
             for index, val in enumerate(row, 0):

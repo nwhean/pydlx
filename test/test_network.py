@@ -225,7 +225,7 @@ class TestNetworkColour(unittest.TestCase):
                                 primary=3)
 
         self.assertListEqual(network.name,
-                             ["0", "p", "q", "r", "x", "y"])
+                             ["0", "p", "q", "r", "x", "y", "6"])
         self.assertListEqual(network.left,
                              [3, 0, 1, 2, 6, 4, 5])
         self.assertListEqual(network.right,
@@ -245,3 +245,8 @@ class TestNetworkColour(unittest.TestCase):
                               12, 20, 14, 15, 15, 17, 23,
                               18, 24, 18, 1, 21, 21, 2,
                               4, 24, 3, 5, None])
+        self.assertListEqual(network.colour,
+                             [None, None, None, None, None, None, 0,
+                              0, 0, 0, 1, 0, 0, 0,
+                              1, 0, 0, 0, 2, 0, 0,
+                              1, 0, 0, 2, 0])
