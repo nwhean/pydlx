@@ -121,6 +121,7 @@ def main(filename: str):
     print(f"Exact cover matrix size: {len(matrix)}, {len(matrix[0])}")
 
     network = NetworkColour(matrix, primary=len(const_row)*2)
+    print(f"Total number of nodes: {len(network.top)}")
     for sol in network.search():
         sol_matrix = skyscraper_solution(network, sol)
         for i in sol_matrix:
