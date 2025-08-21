@@ -43,7 +43,59 @@ def generate_candidates(n: int) -> dict[tuple, tuple]:
         retval[const].append(candidate)
     return retval
 
-def skyscraper_matrix(candidates: dict[tuple, tuple],
+def generate_valids(const_row: Constraint, const_col: Constraint):
+    """Apply edge clue elimination and return valid number for each cell."""
+    n = len(const_row)
+
+    # fill all cells with all numbers
+    s = set(_ for _ in range(1, n+1))
+    retval = {}
+    for i in range(n):
+        for j in range(n):
+            retval[(i, j)] = s.copy()
+
+    for i, (l, r) in enumerate(const_row):
+        for j in range(n):
+            for k in range(n + 2 - l + j, n + 1):   # apply left clue
+                retval[(i, j)].discard(k)
+            for k in range(2*n + 1 - r - j, n + 1): # apply right clue
+                retval[(i, j)].discard(k)
+        if l == 2:
+            retval[(i, 1)].discard(n - 1)
+        if r == 2:
+            retval[(i, n - 2)].discard(n - 1)
+
+    for j, (t, b) in enumerate(const_col):
+        for i in range(n):
+            for k in range(n + 2 - t + i, n + 1):   # apply top clue
+                retval[(i, j)].discard(k)
+            for k in range(2*n + 1 - b - i, n + 1): # apply bottom clue
+                retval[(i, j)].discard(k)
+        if t == 2:
+            retval[(1, j)].discard(n - 1)
+        if b == 2:
+            retval[(n - 2, j)].discard(n - 1)
+
+    return retval
+
+def is_valid_row(valids: dict[(int, int), set[int]], i: int,
+                 candidate: list[int]) -> bool:
+    """Return True if row candidate is valid, false otherwise."""
+    for j, k in enumerate(candidate):
+        if k not in valids[(i, j)]:
+            return False
+    return True
+
+def is_valid_col(valids: dict[(int, int), set[int]], j: int,
+                 candidate: list[int]) -> bool:
+    """Return True if col candidate is valid, false otherwise."""
+    for i, k in enumerate(candidate):
+        if k not in valids[(i, j)]:
+            return False
+    return True
+
+def skyscraper_matrix(valids: dict[(int, int), set[int]],
+                      candidates: dict[tuple, tuple],
                       const_row: Constraint, const_col: Constraint
                       ) -> Matrix:
     """Convert puzzle into an exact cover matrix."""
@@ -55,6 +107,10 @@ def skyscraper_matrix(candidates: dict[tuple, tuple],
         template = [0] * n * (2 + n)
         template[i] = 1
         for candidate in candidates[const]:
+            # disregard invalid candidates
+            if not is_valid_row(valids, i, candidate):
+                continue
+
             temp = template.copy()
             for j, k in enumerate(candidate):
                 temp[(2 + i)*n + j] = str(k)
@@ -65,6 +121,10 @@ def skyscraper_matrix(candidates: dict[tuple, tuple],
         template = [0] * n * (2 + n)
         template[n + j] = 1
         for candidate in candidates[const]:
+            # disregard invalid candidates
+            if not is_valid_col(valids, j, candidate):
+                continue
+
             temp = template.copy()
             for i, k in enumerate(candidate):
                 temp[(2 + i)*n + j] = str(k)
@@ -116,8 +176,9 @@ def verify(solution: Matrix,
 def main(filename: str):
     """Return the solution of the Skyscrapper puzzle."""
     const_row, const_col = read_puzzle(filename)
+    valids = generate_valids(const_row, const_col)
     candidates = generate_candidates(len(const_row))
-    matrix = skyscraper_matrix(candidates, const_row, const_col)
+    matrix = skyscraper_matrix(valids, candidates, const_row, const_col)
     print(f"Exact cover matrix size: {len(matrix)}, {len(matrix[0])}")
 
     network = NetworkColour(matrix, primary=len(const_row)*2)
